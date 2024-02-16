@@ -1,8 +1,17 @@
 import 'package:flutter/cupertino.dart';
 
+
+enum Toast{
+LENGTH_SHORT,
+
+LENGTH_LONG
+}
+
 class FlutterToast{
 
+
 }
+
 typedef PositionedToastBuilder = Widget Function(BuildContext context, Widget child);
 
 void showToast({
