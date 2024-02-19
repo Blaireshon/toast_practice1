@@ -10,7 +10,6 @@ class toast {
   //static void showToast(String msg,BuildContext context){}
 }
 
-
 class ToastView {
 
   static int addOne(int value) => value + 1;
