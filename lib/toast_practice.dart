@@ -16,18 +16,12 @@ List<_ToastEntry> _overlayQueue = []; // 큐 list
 Timer? _timer;
 bool queueState = true; // 큐 실행 확인
 
-// /// animation
-// AnimationController? _animationController;
-// _animationController = AnimationController( duration: const Duration(seconds: 1), vsync: this);
-// final topAnimation = Tween<Offset>(begin: const Offset(0,0), end: const Offset(0,-1))
-//     .animate(CurvedAnimation(parent: _animationController!, curve: Curves.easeInCubic));
-//
-// final bottomAnimation = Tween<Offset>(begin: const Offset(0,0), end: const Offset(0,1))
-//     .animate(CurvedAnimation(parent: _animationController!, curve: Curves.easeInCubic));
-//
+
 
 class ToastView {
   static int addOne(int value) => value + 1;
+
+
 
   ToastView();
 
@@ -38,12 +32,12 @@ class ToastView {
     required Widget child,
     toastPosition? position,
     required BuildContext context,
-    Duration duration = const Duration(seconds: 2),
-
-    /// 기본 설정
+    Duration duration = const Duration(seconds: 2),// 기본 설정
     PositionBuilder? positionBuilder,
+    toastAnimation? animation,
+
   }) {
-    showToast(child, position, context, duration, positionBuilder);
+    showToast(child, position, context, duration, positionBuilder, animation);
     //print(_overlayQueue.length);
 
     if (queueState) {// 큐가 실행 중인지 확인
@@ -52,16 +46,27 @@ class ToastView {
   }
 
   /// 오버레이 생성
-  showToast(Widget child, toastPosition? position, BuildContext context, duration, PositionBuilder? positionBuilder) {
+  showToast(Widget child, toastPosition? position, BuildContext context, duration, PositionBuilder? positionBuilder,toastAnimation? animation) {
 
     OverlayEntry newEntry = OverlayEntry(builder: (context) {
 
+      // if (positionBuilder != null) {
+      //   return positionBuilder(context, child);} // custom 위젯이 있으면 custom위젯 반환
+      // return _getPositionWidget(child, position);
          // 애니메이션 안했을때
-      if (positionBuilder != null) {
-        return positionBuilder(context, child);} // custom 위젯이 있으면 custom위젯 반환
+      if (positionBuilder != null && animation == null) {// custom 위젯이 있으면 custom위젯 반환
+        return positionBuilder(context, child);
+      }else if(positionBuilder == null && animation == null) {
         return _getPositionWidget(child, position);
-      // 애니메이션 했을때
+      }else if(positionBuilder != null && animation != null){
+        print('positionBuilder != null && animation != null '+ animation.toString());
 
+      }else if(positionBuilder == null && animation != null){
+        Widget child2 = _getPositionWidget(child, position);
+        return _getAnimationWidget(child2, animation);
+      }// 애니메이션 했을때
+
+      return _getPositionWidget(child, position);
     });
     _overlayQueue.add(_ToastEntry(entry: newEntry, duration: duration)); // toast 하나가 만들어질때마다 큐에 담음
     //Overlay.of(context)?.insert(newEntry); // overlay 실행
@@ -83,22 +88,27 @@ class ToastView {
     }
   }
 
-  // _getAnimationWidget(Widget child, toastAnimation? animation){
-  //   switch(animation){
-  //     case toastAnimation.TOP:
-  //       return SlideTransition(position: topAnimation, child: child);
-  //     case toastAnimation.BOTTOM:
-  //       return SlideTransition(position: bottomAnimation, child: child);
-  //     case toastAnimation.CENTER:
-  //       return SlideTransition(position: centerAnimation, child: child);
-  //     case toastAnimation.RIGHT:
-  //       return SlideTransition(position: rightAnimation, child: child);
-  //     case toastAnimation.LEFT:
-  //       return SlideTransition(position: leftAnimation, child: child);
-  //     default:
-  //       return SlideTransition(position: topAnimation, child: child);
-  //   }
-  // }
+  _getAnimationWidget(Widget child, toastAnimation? animation){
+
+    return _AnimationToast(child, animation!); // AnimationToast 인스턴스 생성
+   // AnimationToastState toastState = animationToast.createState();
+
+    // switch(animation){
+    //   case toastAnimation.TOP:
+    //     return SlideTransition(position: toastState.topAnimation, child: child);
+    //   case toastAnimation.BOTTOM:
+    //     return SlideTransition(position: toastState.bottomAnimation, child: child);
+    //   case toastAnimation.CENTER:
+    //     return SlideTransition(position: toastState.centerAnimation, child: child);
+    //   case toastAnimation.RIGHT:
+    //     return SlideTransition(position: toastState.rightAnimation, child: child);
+    //   case toastAnimation.LEFT:
+    //     return SlideTransition(position: toastState.leftAnimation, child: child);
+    //   default:
+    //     return SlideTransition(position: toastState.topAnimation, child: child);
+    //
+    // }
+  }
 
   /// 순차적으로 큐에 담긴 오버레이 실행.
   /// 큐가 실행중이 아닐 때만 실행(중복실행 x)
@@ -132,3 +142,68 @@ class _ToastEntry {
     required this.duration,
   });
 }
+
+
+/// 애니메이션 for [ToastView]
+class _AnimationToast extends StatefulWidget {
+  _AnimationToast(this.child, this.animation, {Key? key}): super(key: key);
+
+  final Widget child;
+  final toastAnimation animation;
+
+  @override
+  AnimationToastState createState() => AnimationToastState();
+}
+class AnimationToastState extends State<_AnimationToast>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+
+  late Animation<Offset> topAnimation;
+  late Animation<Offset> bottomAnimation;
+  late Animation<Offset> centerAnimation;
+  late Animation<Offset> rightAnimation;
+  late Animation<Offset> leftAnimation;
+
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(vsync: this, duration: const Duration(seconds: 1));
+
+    topAnimation = Tween<Offset>(begin: const Offset(0,0), end: const Offset(0,-1))
+        .animate(CurvedAnimation(parent: _animationController!, curve: Curves.easeInCubic));
+
+    bottomAnimation = Tween<Offset>(begin: const Offset(0,0), end: const Offset(0,1))
+        .animate(CurvedAnimation(parent: _animationController!, curve: Curves.easeInCubic));
+
+    centerAnimation = Tween<Offset>(begin: const Offset(0, 0), end: const Offset(0, 0))
+        .animate(CurvedAnimation(parent: _animationController!, curve: Curves.easeInCubic));
+
+    rightAnimation = Tween<Offset>(begin: const Offset(0,0), end: const Offset(1,0))
+        .animate(CurvedAnimation(parent: _animationController!, curve: Curves.easeInCubic));
+
+    leftAnimation = Tween<Offset>(begin: const Offset(0,0), end: const Offset(-1,0))
+        .animate(CurvedAnimation(parent: _animationController!, curve: Curves.easeInCubic));
+
+    _animationController.forward();
+
+  }
+
+  @override
+  void dispose() {
+    if (_animationController.isAnimating) { // 애니메이션 중인지 확인
+      _animationController.stop();
+    }
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: implement build
+    return SlideTransition(position: topAnimation, child: widget.child);
+  }
+
+
+}
+
