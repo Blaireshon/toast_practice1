@@ -1,6 +1,7 @@
 library toast_practice;
 
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -11,12 +12,23 @@ enum toastAnimation { TOP, BOTTOM, RIGHT, LEFT }
 typedef PositionBuilder = Widget Function(BuildContext context, Widget child);
 
 ///Queue
-List<_ToastEntry> overlayQueue = []; // 큐 list
-bool queueState = true; // 큐 실행 확인
-Timer? timer;
-OverlayEntry? entryQueue; // 큐에 들어갈 객체
+// List<_ToastEntry> overlayQueue = []; // 큐 list
+// bool queueState = true; // 큐 실행 확인
+// Timer? timer;
+// OverlayEntry? entryQueue; // 큐에 들어갈 객체
+//
+// Queue<_ToastEntry> queue = Queue();
+
+ToastManager toastManager = ToastManager();
 
 class ToastView {
+
+  // Queue<_ToastEntry> overlayQueue = Queue(); // 큐 객체 생성
+  // bool queueState = true; // 큐 실행 확인
+  // Timer? timer;
+  // OverlayEntry? entryQueue; // 큐에 들어갈 객체
+
+
 
   //생성자
   ToastView();
@@ -32,15 +44,28 @@ class ToastView {
       }) {
     showToast(
         child, position, context, duration, positionBuilder, animation);
-    //print(_overlayQueue.length);
+    print(toastManager.overlayQueue.length);
 
-    if (queueState) {// 큐가 실행 중인지 확인
-      startQueue(context); // toast 순차적으로 실행
+    if (toastManager.queueState) {// 큐가 실행 중인지 확인
+      toastManager.startQueue(context); // toast 순차적으로 실행
     }
   }
 
   /// 오버레이 생성
-  showToast(
+  /// [child] custom 위젯
+  /// [toastPosition]
+  /// [positionBuilder]
+  /// positionBuilder:  (context, child) {
+  //           return Stack(
+  //             alignment: Alignment.center,
+  //             children: [
+  //               Positioned(child: child,
+  //                   top: 200,
+  //                   left: 300),
+  //             ],
+  //           );
+  //         }
+  void showToast(
       Widget child,
       toastPosition? position,
       BuildContext context,
@@ -71,14 +96,14 @@ class ToastView {
       return resultWidget;
     });
 
-    overlayQueue.add(_ToastEntry(
+    toastManager.overlayQueue.add(_ToastEntry(
         entry: newEntry, duration: duration)); // toast 하나가 만들어질때마다 큐에 담음
     //Overlay.of(context)?.insert(newEntry); // overlay 실행
     //return newEntry;
   }
 
   ///position
-  _getPositionWidget(Widget child, toastPosition? position) {
+  Widget _getPositionWidget(Widget child, toastPosition? position) {
     Widget positionedWidget;
     switch (position) {
       case toastPosition.TOP:
@@ -109,15 +134,45 @@ class ToastView {
   /// 순차적으로 큐에 담긴 오버레이 실행.
   /// 큐가 실행중이 아닐 때만 실행(중복실행 x)
   /// 큐가 비어있으면 실행 x
-  void startQueue(BuildContext context) {
+  /// []
+  // void startQueue(BuildContext context) {
+  //
+  //   if (overlayQueue.isNotEmpty && entryQueue == null) {
+  //     queueState = false; // 실행 여부
+  //     //final toastEntry = overlayQueue.removeAt(0); // 큐 첫번째 push, 변수에 담음
+  //     final toastEntry = overlayQueue.removeFirst();
+  //     entryQueue = toastEntry.entry;
+  //     Overlay.of(context)?.insert(entryQueue!); // 오버레이 실행
+  //
+  //     timer = Timer(toastEntry.duration, () {// duration 시간만큼 실행 후 오버레이 삭제
+  //       entryQueue?.remove(); // 오버레이 닫음
+  //       entryQueue = null;
+  //       startQueue(context); // 재귀함수
+  //     });
+  //   } else if (overlayQueue.isEmpty) {
+  //     // 큐가 비어있을 때 큐 실행 종료
+  //     queueState = true;
+  //   }
+  // }
+}
 
+class ToastManager {
+  Queue<_ToastEntry> overlayQueue = Queue(); // 큐 객체 생성
+  bool queueState = true; // 큐 실행 확인
+  Timer? timer;
+  OverlayEntry? entryQueue; // 큐에 들어갈 객체
+
+
+
+  void startQueue(BuildContext context) {
     if (overlayQueue.isNotEmpty && entryQueue == null) {
       queueState = false; // 실행 여부
-      final toastEntry = overlayQueue.removeAt(0); // 큐 첫번째 push, 변수에 담음
+      final toastEntry = overlayQueue.removeFirst(); // 큐 첫번째 push, 변수에 담음
       entryQueue = toastEntry.entry;
       Overlay.of(context)?.insert(entryQueue!); // 오버레이 실행
 
-      timer = Timer(toastEntry.duration, () {// duration 시간만큼 실행 후 오버레이 삭제
+      timer = Timer(toastEntry.duration, () {
+        // duration 시간만큼 실행 후 오버레이 삭제
         entryQueue?.remove(); // 오버레이 닫음
         entryQueue = null;
         startQueue(context); // 재귀함수
@@ -125,6 +180,13 @@ class ToastView {
     } else if (overlayQueue.isEmpty) {
       // 큐가 비어있을 때 큐 실행 종료
       queueState = true;
+    }
+  }
+
+  void enqueue(_ToastEntry toastEntry, BuildContext context) {
+    overlayQueue.add(toastEntry);
+    if (queueState) {
+      startQueue(context);
     }
   }
 }
