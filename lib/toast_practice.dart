@@ -47,32 +47,38 @@ typedef PositionBuilder = Widget Function(BuildContext context, Widget child);
 enum toastAnimation { TOP, BOTTOM, RIGHT, LEFT }
 
 /// toast를 어떻게 보여줄지 설정
-/// [LAYER] : toast를 여러개를 겹쳐서 보여줌
-/// [STACK] : toast를 쌓아서 여러개를 보여줌
-/// [NORMAL] : toast를 하나씩 보여줌.
-enum toastpresentation {LAYER,STACK,NORMAL}
+/// [LAYER] toast를 여러개를 겹쳐서 보여줌
+/// [STACK] toast를 쌓아서 여러개를 보여줌
+/// [NORMAL] toast를 하나씩 보여줌.
+enum toastpresentation {LAYER,LIST,NORMAL}
 
 
 /// toast를 순차적으로 보여주는 클래스 인스턴스화/객체생성
 /// [toastpresentation]의 [toastpresentation.NORMAL]일때 실행 됨
 ToastManager toastManager = ToastManager();
+ToastListManager toastListManager = ToastListManager();
+
 
 /// toast를 생성하는 클래스
-/// [createToast] : toast 생성
-/// [showToast] : 생성된 toast를 OverlayEntry객체에 담고 Queue에 담음
-/// [_getPositionWidget] : 사용자가 위치를 설정하지 않고 [toastPosition] 고정값으로 설정하면 이 함수를 통해 Stack 위젯 반환
+/// [createToast] toast 생성
+/// [showToast] 생성된 toast를 OverlayEntry객체에 담고 Queue에 담음
+/// [_getPositionWidget] 사용자가 위치를 설정하지 않고 [toastPosition] 고정값으로 설정하면 이 함수를 통해 Stack 위젯 반환
 /// --> return Stack
 class ToastView {
+  int addOne(int value) => value +1;
+
+  Timer? timer;
+  Timer? listTimer;
 
   /// toast생성
   /// --> return void
-  /// required [child] : toast내용이 들어가는 위젯
-  /// [position] : [toastPosition] { TOP, BOTTOM, CENTER } 위치 고정값
+  /// required [child] toast내용이 들어가는 위젯
+  /// Nullable [position] { TOP, BOTTOM, CENTER } 위치 고정값
   /// required [context]
-  /// [duration] : toast가 화면에 띄어지는 시간
-  /// [fadeDuration] : toast가 opacity값을 사용해서 사라지는 애니메이션의 시간 설정
-  /// [positionBuilder] : toast 사용자 위치 설정
-  /// [animation] : [toastAnimation] { TOP, BOTTOM, RIGHT, LEFT } toast 띄울 때 애니메이션 효과
+  /// [duration] toast가 화면에 띄어지는 시간
+  /// [fadeDuration] toast가 opacity값을 사용해서 사라지는 애니메이션의 시간 설정
+  /// Nullable [positionBuilder] toast 사용자 위치 설정
+  /// Nullable [animation] { TOP, BOTTOM, RIGHT, LEFT } toast 띄울 때 애니메이션 효과
   /// [toastpresentation]
    void createToast(
       {required Widget child,
@@ -87,9 +93,22 @@ class ToastView {
 
      /// 오버레이 생성 및 큐에 각 toast add
      /// --> return void
-    showToast(
-        child, position, context, duration, fadeDuration, positionBuilder, animation, presentation);
-    print('length : ' + (toastManager.overlayQueue.length).toString());
+     /// 
+     if(presentation != toastpresentation.LIST) {
+       showToast(
+           child,
+           position,
+           context,
+           duration,
+           fadeDuration,
+           positionBuilder,
+           animation,
+           presentation);
+       print('length : ' + (toastManager.overlayQueue.length).toString());
+     }else {
+       listToast(child, context, presentation);
+     }
+    
 
     /// 큐가 실행 중인지 확인
     /// Bool [queueState] : true 큐 비었음, flase 큐에 실행될 toast객체가 담겨져 있고 하나씩 실행 중
@@ -103,11 +122,11 @@ class ToastView {
 
   /// 오버레이 생성 후 Queue add
    /// --> return void
-  /// [child] : custom 위젯
-  /// [position] : [toastPosition] { TOP, BOTTOM, CENTER } 위치 고정값
-   /// [duration] : toast가 화면에 띄어지는 시간
-   /// [fadeDuration] : toast가 opacity값을 사용해서 사라지는 애니메이션의 시간 설정
-  /// [positionBuilder]
+  /// [child] custom 위젯
+  /// Nullable [position] { TOP, BOTTOM, CENTER } 위치 고정값
+   /// [duration] toast가 화면에 띄어지는 시간
+   /// [fadeDuration] toast가 opacity값을 사용해서 사라지는 애니메이션의 시간 설정
+  /// Nullable [positionBuilder]
   // positionBuilder:  (context, child) {
   //           return Stack(
   //             alignment: Alignment.center,
@@ -118,7 +137,7 @@ class ToastView {
   //             ],
   //           );
   //         }
-   /// [animation] : [toastAnimation] { TOP, BOTTOM, RIGHT, LEFT } toast 띄울 때 애니메이션 효과
+   /// Nullable [animation] { TOP, BOTTOM, RIGHT, LEFT } toast 띄울 때 애니메이션 효과
   void showToast(
       Widget child,
       toastPosition? position,
@@ -140,30 +159,18 @@ class ToastView {
     OverlayEntry newEntry = OverlayEntry(builder: (context) {
       Widget resultWidget;
 
-      if (positionBuilder != null &&
-          (animation == null && fadeDuration == const Duration(seconds: 0))) {
-        print('1 :');
-        resultWidget = positionBuilder(context, child);
-      } else if (positionBuilder == null &&
-          (animation == null && fadeDuration == const Duration(seconds: 0))) {
-        print('2 :');
-        resultWidget = _getPositionWidget(child, position);
-      } else if (positionBuilder != null &&
-          (animation != null || fadeDuration != const Duration(seconds: 0))) {
-        print('3 :');
-        Widget child2 = positionBuilder(context, child);
-        resultWidget =
-            _AnimationToast(child2, animation, duration, fadeDuration);
-      } else if (positionBuilder == null &&
-          (animation != null || fadeDuration != const Duration(seconds: 0))) {
-        print('4 :');
-        Widget child2 = _getPositionWidget(child, position);
-        resultWidget =
-            _AnimationToast(child2, animation, duration, fadeDuration);
+      if (positionBuilder != null) {
+      resultWidget = positionBuilder(context, child);
+        if (animation != null || fadeDuration != const Duration(seconds: 0)) {
+          resultWidget = _AnimationToast(resultWidget, animation, duration, fadeDuration);
+        }
       } else {
-        print('5 :');
-        resultWidget = _getPositionWidget(child, position);
-      }
+      resultWidget = _getPositionWidget(child, position);
+        if (animation != null || fadeDuration != const Duration(seconds: 0)) {
+          resultWidget = _AnimationToast(resultWidget, animation, duration, fadeDuration);
+        }
+        }
+
       return resultWidget;
     });
 
@@ -182,11 +189,21 @@ class ToastView {
     } else if (presentation == toastpresentation.LAYER) {
       Overlay.of(context)?.insert(newEntry); // overlay 실행
 
+      final totalDuration = duration + fadeDuration;
+      timer = Timer(totalDuration,(){
+        newEntry?.remove();
+      });
     }
   }
 
-  /// position
+  /// position (toast 위치 고정값)
    /// --> return Stack
+  /// 사용자가 직접 위치설정안하고 기존 고정되어있는 위치를 사용할 때
+  /// position: toastPosition.CENTER,
+
+   /// [toastPosition.TOP] Positioned(top: 50.0, child: child);
+   /// [toastPosition.BOTTOM] Positioned(bottom: 50.0, child: child);
+   /// [toastPosition.CENTER] Positioned(bottom: 50.0, child: child);
   Widget _getPositionWidget(Widget child, toastPosition? position) {
     print('_getPositionWidget');
     Widget positionedWidget;
@@ -201,7 +218,7 @@ class ToastView {
         break;
       case toastPosition.CENTER:
         positionedWidget =
-            Positioned(left: 24.0, right: 24.0, child: child);
+            Positioned(child: child);
         break;
       default:
         positionedWidget =
@@ -216,42 +233,176 @@ class ToastView {
     );
   }
 
-  /// 순차적으로 큐에 담긴 오버레이 실행.
-  /// 큐가 실행중이 아닐 때만 실행(중복실행 x)
-  /// 큐가 비어있으면 실행 x
-  /// []
+  ///=============================================================================
+  DateTime? endTime;
+  DateTime? startTime;
+  void listToast(Widget child,
+      BuildContext context,
+      toastpresentation presentation) {
+    toastListManager.timer?.cancel();
+
+     // 큐에 담음. 큐는 위젯과 1초 시간이 담긴 객체로 담김
+    toastListManager.overlayQueue.add(_ToastListEntry(child: child, duration:const Duration(seconds: 2)));
+
+    // 큐 실행 > overlayEntry
+    // if(toastListManager.queueState) {
+     // print('toastListManager.queueState : ' + toastListManager.queueState.toString());
+    if(!toastListManager.queueState){
+
+      print('여기');
+      endTime = DateTime.now();
+      startTime = toastListManager.startTime;
+      print('endTime : ' +  endTime.toString());
+      print('startTime :' +  startTime.toString());
+      if (startTime != null) {
+        Duration? remainingTime = endTime?.difference(startTime!);
+        print('timer!.tick : ' + remainingTime.toString());
+      }
+      // 현재 실행 중이었던 첫번째 객체의 남은 시간 재 설정
+
+      // toastListManager.nowToastListEntry?.duration = Duration(seconds: 1);
+    }
+    print('toastListManager.queueState1 : ' + toastListManager.queueState.toString());
+       toastListManager.startQueue(context);
+    print('toastListManager.queueState2 : ' + toastListManager.queueState.toString());
+       // 실행 중이면
+
+    // }
+
+
+
+  }
+
 }
 
-class ToastManager {
-  Queue<_ToastEntry> overlayQueue = Queue(); // 큐 객체 생성
+class ToastListManager{
+  Queue<_ToastListEntry> overlayQueue = Queue(); // 큐 객체 생성
   bool queueState = true; // 큐 실행 확인
   Timer? timer;
-  OverlayEntry? entryQueue; // 큐에 들어갈 객체
+  _ToastListEntry? nowToastListEntry; // 현재 첫번째 객체
+  Duration? elapsedTime; // 경과한 시간
+  DateTime? startTime;
+  void startQueue(BuildContext context){
 
+    startTime = DateTime.now();
+
+   print('startTimestartTime : '  + startTime.toString());
+    // 큐 상태 전환
+    queueState = false;
+    // if(overlayQueue != null) {
+
+
+      List<_ToastListEntry> widgetList = overlayQueue
+          .toList();
+
+      nowToastListEntry = widgetList[0];
+
+      OverlayEntry newEntry = OverlayEntry(builder: (context) {
+
+        return ListView.builder(
+            itemCount: overlayQueue.length,
+            itemBuilder: (context, index) {
+              return widgetList[index].child;
+            }
+
+        );
+      });
+      Overlay.of(context)?.insert(newEntry);
+
+      print('nowToastListEntry!.duration' + nowToastListEntry!.duration.toString());
+
+      // 시작시간
+      startTime = DateTime.now();
+      timer = Timer(nowToastListEntry!.duration, () {
+
+        newEntry?.remove();
+
+        // 현재 첫번째 객체가 가진 시간을 모두 소비하면 빈 변수로 남겨둠
+        nowToastListEntry = null;
+        overlayQueue.removeFirst();
+        startTime=null;
+        //startQueue(context);
+      });
+    // }else {
+    //   print('3');
+    //   queueState =true;
+    // }
+    // if(overlayQueue.isEmpty){
+    //   queueState = true;
+    // }
+
+  }
+}
+class _ToastListEntry {
+  final Widget child;
+  late final Duration duration;
+
+  _ToastListEntry({
+    required this.child,
+    required this.duration,
+  });
+}
+
+///=============================================================================
+
+
+
+/// toast 실행 순서 관리
+/// Queue<_ToastEntry> [overlayQueue]  toast 객체 관리할 Queue
+//class _ToastEntry {
+//   final OverlayEntry entry;
+//   final Duration duration;
+//   final Duration fadeDuration;
+// }
+/// bool [queueState]  queue가 실행 중인지 상태 확인. true : 실행 가능 / false : 실행 중으로 중복 실행 x
+/// Timer? [timer] 화면에 보여줘야 할 시간 관리
+/// OverlayEntry? [entryQueue] Queue에 추가 될 OverlayEntry객체
+/// [startQueue]
+///
+class ToastManager {
+  Queue<_ToastEntry> overlayQueue = Queue();
+  bool queueState = true;
+  Timer? timer;
+  OverlayEntry? entryQueue;
+
+  /// 순차적으로 큐에 담긴 오버레이 실행.
+  /// --> return void
   void startQueue(BuildContext context) {
 
     if (overlayQueue.isNotEmpty && entryQueue == null) {
-      queueState = false; // 실행 여부
-      final toastEntry = overlayQueue.removeFirst(); // 큐 첫번째 push, 변수에 담음
+      // 중복 실행되지 않도록 queue 실행 중으로 상태 전환.
+      queueState = false;
+      // queue의 첫번째 pop한 객체<_ToastEntry>를 변수에 담음
+      final toastEntry = overlayQueue.removeFirst();
+      //<_ToastEntry>의 OverlayEntry객체를 변수에 담음
       entryQueue = toastEntry.entry;
-      Overlay.of(context)?.insert(entryQueue!); // 오버레이 실행
+      // 오버레이 실행
+      Overlay.of(context)?.insert(entryQueue!);
 
+      // 해당 오버레이가 화면에 띄어져야 할 시간 : duration + fadeDuration
       final totalDuration = toastEntry.duration+ toastEntry.fadeDuration;
+
+
       timer = Timer(totalDuration, () {
         print('totalDuration ' + totalDuration.toString());
         // duration 시간만큼 실행 후 오버레이 삭제
-        entryQueue?.remove(); // 오버레이 닫음
+        entryQueue?.remove();
         entryQueue = null;
-        startQueue(context); // 재귀함수
+        // 재귀함수. overlayQueue에 담긴 객체들이 모두 보여줄때까지 실행반복
+        startQueue(context);
       });
     } else if (overlayQueue.isEmpty) {
-      // 큐가 비어있을 때 큐 실행 종료
+      // 큐에 있는 toast를 모두 실행 시킨 후 상태를 실행 가능으로 전환.
       queueState = true;
     }
   }
 }
 
-/// Queue Object
+/// Queue에 담길 Object
+/// Queue<_ToastEntry> overlayQueue에 담길 객체.
+/// OverlayEntry [entry] [showToast]에서 생성된 OverlayEntry객체
+/// Duration [duration] 사용자가 설정한 toast 보여주는 시간. 설정하지 않으면 기본 설정값 seconds:2
+/// Duration [fadeDuration] 사용자가 설정한 toast 사라지는 애니메이션 효과 시간. 설정하지 않으면 기본 설정값 seconds:0
 class _ToastEntry {
   final OverlayEntry entry;
   final Duration duration;
@@ -264,7 +415,11 @@ class _ToastEntry {
   });
 }
 
-/// Animation
+/// Animation (slide효과 [animation], fade효과[fadeDuration])
+/// Widget [child] 사용자가 custom한 위젯
+/// toastAnimation [animation] 사용자가 설정한 animation 효과
+/// Duration [duration] 사용자가 설정한 toast 시간
+/// Duration [fadeDuration] 사용자가 설정한 fade 효과 시간
 class _AnimationToast extends StatefulWidget {
 
   _AnimationToast(this.child, this.animation,this.duration, this.fadeDuration, {Key? key}) : super(key: key);
@@ -278,9 +433,11 @@ class _AnimationToast extends StatefulWidget {
   AnimationToastState createState() => AnimationToastState();
 
 }
-
+///_AnimationToast 위젯 상태 관리, 애니메이션 제어
 class AnimationToastState extends State<_AnimationToast>
     with TickerProviderStateMixin {
+
+  /// [animation] slide효과 애니메이션 제어
   late AnimationController _animationController;
   late Animation<Offset> topAnimation;
   late Animation<Offset> bottomAnimation;
@@ -288,53 +445,71 @@ class AnimationToastState extends State<_AnimationToast>
   late Animation<Offset> rightAnimation;
   late Animation<Offset> leftAnimation;
 
+  /// [fadeDuration] fade효과 애니메이션 제어
   late AnimationController _fadeController;
   late Animation _fadeAnimation;
 
+  /// [fadeDuration] fade 애니메이션 시간 관리
   Timer? _timer;
 
-  ///animation 동작 정의
+  /// animation 동작 정의
+  /// 리소스 할당
   @override
   void initState() {
     print('_AnimationToast');
 
     super.initState();
+
+    /// [animation] 기본 설정 1초
     _animationController =
         AnimationController(vsync: this, duration: const Duration(seconds: 1));
         // AnimationController(vsync: this, duration: const Duration(seconds: 1));
 
+    /// 위에서 아래로
     topAnimation =
         Tween<Offset>(begin: const Offset(0, -1), end: const Offset(0, 0))
             .animate(CurvedAnimation(
                 parent: _animationController!, curve: Curves.easeInCubic));
-
+    /// 아래에서 위로
     bottomAnimation =
         Tween<Offset>(begin: const Offset(0, 1), end: const Offset(0, 0))
             .animate(CurvedAnimation(
                 parent: _animationController!, curve: Curves.easeInCubic));
 
+    /// 사용자가 애니메이션 설정 안했을때 기본 설정값. 애니메이션 없이 실행
     nullAnimation =
         Tween<Offset>(begin: const Offset(0, 0), end: const Offset(0, 0))
             .animate(CurvedAnimation(
                 parent: _animationController!, curve: Curves.easeInCubic));
 
+    /// 오른쪽에서 왼쪽으로
     rightAnimation =
         Tween<Offset>(begin: const Offset(1, 0), end: const Offset(0, 0))
             .animate(CurvedAnimation(
                 parent: _animationController!, curve: Curves.easeInCubic));
 
+    /// 왼쪽에서 오른쪽으로
     leftAnimation =
         Tween<Offset>(begin: const Offset(-1, 0), end: const Offset(0, 0))
             .animate(CurvedAnimation(
                 parent: _animationController!, curve: Curves.easeInCubic));
 
 
+    /// [fadeDuration] 사용자가 설정한 시간만큼 fade애니메이션 실행
     _fadeController = AnimationController(vsync: this, duration: widget.fadeDuration);
+
+    /// 나타난 toast 스르륵 사라짐
     _fadeAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(_fadeController);
 
+    /// [animation] 설정한 값으로 애니메이션 시작
     _animationController.forward();
 
+    /// [fadeDuration] 사용자가 설정한 값이 있으면 toast보여주는 시간[duration]이 지난 후 [fadeDuration]실행 됨
     if(widget.fadeDuration != const Duration(seconds: 0)) {
+      // 이전에 실행 중인 타이머가 있으면 취소
+      // _timer?.cancel();
+
+      /// [widget.duration] 사용자가 지정한 toast보여주는 시간
       _timer = Timer(widget.duration, () {
         print('widget.duration :' + (widget.duration).toString());
         _fadeController.forward();
@@ -343,6 +518,8 @@ class AnimationToastState extends State<_AnimationToast>
 
   }
 
+  /// [animation] 설정한 값으로 return
+  /// --> return Animation<Offset>
   Animation<Offset> AnimationType(toastAnimation? animation) {
     switch (animation) {
       case toastAnimation.TOP:
@@ -360,6 +537,8 @@ class AnimationToastState extends State<_AnimationToast>
     }
   }
 
+
+  /// State객체가 제거되기 전 실행. 리소스 해제
   @override
   void dispose() {
     if (_animationController.isAnimating) {
@@ -375,7 +554,6 @@ class AnimationToastState extends State<_AnimationToast>
   Widget build(BuildContext context) {
     return FadeTransition(
       opacity: _fadeAnimation as Animation<double>,
-
       child: SlideTransition(
         position: AnimationType(widget.animation),
         child: widget.child,
