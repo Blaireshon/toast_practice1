@@ -2,7 +2,7 @@ library toast_practice;
 
 import 'dart:async';
 import 'dart:collection';
-
+import 'package:get/get.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -48,7 +48,7 @@ enum toastAnimation { TOP, BOTTOM, RIGHT, LEFT }
 
 /// toast를 어떻게 보여줄지 설정
 /// [LAYER] toast를 여러개를 겹쳐서 보여줌
-/// [STACK] toast를 쌓아서 여러개를 보여줌
+/// [LIST] toast를 쌓아서 여러개를 보여줌
 /// [NORMAL] toast를 하나씩 보여줌.
 enum toastpresentation {LAYER,LIST,NORMAL}
 
@@ -104,8 +104,8 @@ class ToastView {
            positionBuilder,
            animation,
            presentation);
-       print('length : ' + (toastManager.overlayQueue.length).toString());
      }else {
+       print('hi');
        listToast(child, context, presentation);
      }
     
@@ -205,7 +205,6 @@ class ToastView {
    /// [toastPosition.BOTTOM] Positioned(bottom: 50.0, child: child);
    /// [toastPosition.CENTER] Positioned(bottom: 50.0, child: child);
   Widget _getPositionWidget(Widget child, toastPosition? position) {
-    print('_getPositionWidget');
     Widget positionedWidget;
     switch (position) {
       case toastPosition.TOP:
@@ -234,95 +233,109 @@ class ToastView {
   }
 
   ///=============================================================================
-  DateTime? endTime;
-  DateTime? startTime;
   void listToast(Widget child,
       BuildContext context,
       toastpresentation presentation) {
-    toastListManager.timer?.cancel();
+    //toastListManager.timer?.cancel();
 
      // 큐에 담음. 큐는 위젯과 1초 시간이 담긴 객체로 담김
-    toastListManager.overlayQueue.add(_ToastListEntry(child: child, duration:const Duration(seconds: 2)));
 
-    // 큐 실행 > overlayEntry
-    // if(toastListManager.queueState) {
-     // print('toastListManager.queueState : ' + toastListManager.queueState.toString());
-    if(!toastListManager.queueState){
+    ToastListManager toastListManager = Get.put(ToastListManager());
+    //toastListManager.overlayList.add(_ToastListEntry(child: child, duration:const Duration(seconds: 2)));
 
-      print('여기');
-      endTime = DateTime.now();
-      startTime = toastListManager.startTime;
-      print('endTime : ' +  endTime.toString());
-      print('startTime :' +  startTime.toString());
-      if (startTime != null) {
-        Duration? remainingTime = endTime?.difference(startTime!);
-        print('timer!.tick : ' + remainingTime.toString());
-      }
-      // 현재 실행 중이었던 첫번째 객체의 남은 시간 재 설정
-
+    if(!toastListManager.listState){
       // toastListManager.nowToastListEntry?.duration = Duration(seconds: 1);
+      print('여기');
+      toastListManager.overlayList.add(_ToastListEntry(child: child, duration:const Duration(seconds: 2)));
+
+    }else{
+      toastListManager.overlayList.add(_ToastListEntry(child: child, duration:const Duration(seconds: 2)));
+      toastListManager.startQueue(context);
+      print('저기');
     }
-    print('toastListManager.queueState1 : ' + toastListManager.queueState.toString());
-       toastListManager.startQueue(context);
-    print('toastListManager.queueState2 : ' + toastListManager.queueState.toString());
-       // 실행 중이면
-
-    // }
-
-
 
   }
 
 }
 
-class ToastListManager{
-  Queue<_ToastListEntry> overlayQueue = Queue(); // 큐 객체 생성
-  bool queueState = true; // 큐 실행 확인
+class ToastListManager extends GetxController{
+  //RxList overlayList = [].obs; // 리스트 객체 생성
+  RxList<_ToastListEntry> overlayList = <_ToastListEntry>[].obs;
+  bool listState = true; // list 실행 확인
   Timer? timer;
-  _ToastListEntry? nowToastListEntry; // 현재 첫번째 객체
-  Duration? elapsedTime; // 경과한 시간
-  DateTime? startTime;
+  OverlayEntry? newEntry;
+ // _ToastListEntry? nowToastListEntry; // 현재 첫번째 객체
+
   void startQueue(BuildContext context){
+    if (!listState) return;
 
-    startTime = DateTime.now();
-
-   print('startTimestartTime : '  + startTime.toString());
     // 큐 상태 전환
-    queueState = false;
-    // if(overlayQueue != null) {
+    listState = false;
 
+     // nowToastListEntry = overlayList[0];
 
-      List<_ToastListEntry> widgetList = overlayQueue
-          .toList();
+      // OverlayEntry newEntry = OverlayEntry(builder: (context) {
+      //
+      //   return Obx(() => ListView.builder(
+      //       itemCount: overlayList.length,
+      //       itemBuilder: (context, index) {
+      //
+      //         timer = Timer(nowToastListEntry!.duration, () {
+      //
+      //           //newEntry?.remove();
+      //           overlayList = [].obs;
+      //
+      //           nowToastListEntry = null;
+      //           overlayList.removeAt(index);
+      //
+      //         });
+      //         return overlayList[index].child;
+      //       }
+      //
+      //   ));
+      // });
+    newEntry = OverlayEntry(builder: (context) {
+      return Obx(() => ListView.builder(
+        itemCount: overlayList.length,
+        itemBuilder: (context, index) {
+          _ToastListEntry toastListEntry = overlayList[index];
 
-      nowToastListEntry = widgetList[0];
-
-      OverlayEntry newEntry = OverlayEntry(builder: (context) {
-
-        return ListView.builder(
-            itemCount: overlayQueue.length,
-            itemBuilder: (context, index) {
-              return widgetList[index].child;
+          timer = Timer(toastListEntry.duration, () {
+            overlayList.removeAt(index);
+            if (overlayList.isEmpty) {
+              newEntry?.remove();
+              listState = true;
             }
+          });
 
-        );
-      });
-      Overlay.of(context)?.insert(newEntry);
+          return toastListEntry.child;
+        },
+      ));
+    });
 
-      print('nowToastListEntry!.duration' + nowToastListEntry!.duration.toString());
+      Overlay.of(context)?.insert(newEntry!);
 
-      // 시작시간
-      startTime = DateTime.now();
-      timer = Timer(nowToastListEntry!.duration, () {
+      /// 첫번째 객체 2초 지나면 list에서 삭제
+      // timer = Timer(nowToastListEntry!.duration, () {
+      //
+      //   newEntry?.remove();
+      //   overlayList = [].obs;
+      //
+      //   nowToastListEntry = null;
+      //   overlayList.removeAt(0);
+      //
+      // });
 
-        newEntry?.remove();
-
-        // 현재 첫번째 객체가 가진 시간을 모두 소비하면 빈 변수로 남겨둠
-        nowToastListEntry = null;
-        overlayQueue.removeFirst();
-        startTime=null;
-        //startQueue(context);
-      });
+    //   /// 마지막 객체 2초가 지나야 overlay 닫음
+    // timer = Timer(lastToastListEntry!.duration, () {
+    //
+    //   newEntry?.remove();
+    //   overlayList = [].obs;
+    //
+    //   lastToastListEntry = null;
+    //   listState = false;
+    //
+    // });
     // }else {
     //   print('3');
     //   queueState =true;
@@ -456,7 +469,6 @@ class AnimationToastState extends State<_AnimationToast>
   /// 리소스 할당
   @override
   void initState() {
-    print('_AnimationToast');
 
     super.initState();
 
