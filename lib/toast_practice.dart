@@ -241,18 +241,31 @@ class ToastView {
 
      // 큐에 담음. 큐는 위젯과 1초 시간이 담긴 객체로 담김
 
+    _ToastListEntry creatToast = _ToastListEntry(child: child, duration:const Duration(seconds: 2));
+    toastListManager.overlayList.add(creatToast);
+    //toastListManager.updateToast(creatToast);
 
-    toastListManager.overlayList.add(_ToastListEntry(child: child, duration:const Duration(seconds: 2)));
-    if (toastListManager.newEntry != null) {
-      print(toastListManager.newEntry);
-      // 이미 Overlay가 존재하는 경우
-      print('여기');
-      toastListManager._updateToast();
-    } else {
-      print('저기');
+    if (toastListManager._overlayEntries.isEmpty) {
+      print('처음');
       // Overlay가 존재하지 않는 경우
       toastListManager._showToast(context);
+    } else {
+      print('노처음');
+      // 이미 Overlay가 존재하는 경우
+      toastListManager.updateToast(creatToast);
     }
+    // if (toastListManager.newEntry != null) {
+    //   print(toastListManager.newEntry);
+    //   // 이미 Overlay가 존재하는 경우
+    //   print('여기');
+    //   toastListManager._updateToast();
+    // } else {
+    //   print('저기');
+    //   // Overlay가 존재하지 않는 경우
+    //   toastListManager._showToast(context);
+    // }
+
+
     // if(!toastListManager.listState){
     //   // toastListManager.nowToastListEntry?.duration = Duration(seconds: 1);
     //   print('여기');
@@ -276,52 +289,148 @@ class ToastListManager extends GetxController{
   List<OverlayEntry> _overlayEntries = [];
 
   void _updateToast() {
-    if (newEntry != null) {
-      newEntry!.markNeedsBuild();
+    // if (newEntry != null) {
+    //   newEntry!.markNeedsBuild();
+    // }
+    print('update!');
+    for (var entry in _overlayEntries) {
+      entry.markNeedsBuild();
+      print('for');
     }
   }
   void _showToast(BuildContext context) {
-    newEntry = OverlayEntry(
+    print('first!');
+     newEntry = OverlayEntry(
       builder: (BuildContext context) => Positioned(
         top: 50,
         left: 10,
         right: 10,
-        child: Material(
-         // elevation: 4,
-          borderRadius: BorderRadius.circular(8),
-            child: Column(
-              children: [
-                for (_ToastListEntry obj in overlayList) Padding(
-                  padding: const EdgeInsets.only(top:10.0),
-                  child: Container(child: obj?.child),
-                ), // toastList의 모든 메시지를 표시
-              ],
-            ),
-
+        child: Column(
+          children: [
+            // Padding(
+            //   padding: const EdgeInsets.only(top:10.0),
+            //   child: Container(child: overlayList[0].child),
+            // ),
+            for (_ToastListEntry obj in overlayList) Padding(
+              padding: const EdgeInsets.only(top:10.0),
+              child: Container(child: obj?.child),
+            ), // toastList의 모든 메시지를 표시
+          ],
         ),
       ),
     );
 
+
     Overlay.of(context)?.insert(newEntry!);
     _overlayEntries.add(newEntry!);
 
-    Timer(Duration(seconds: 2), () {
-      hideToast(newEntry!);
-      newEntry = null;
+    overlayList.last.timer = Timer(Duration(seconds: 2), () {
+      hideToast(overlayList.last);
     });
+    //
+    // Timer(Duration(seconds: 2), () {
+    //   hideToast(newEntry);
+    //   // newEntry = null;
+    // });
 
   }
-  void hideToast(OverlayEntry overlayEntry) {
-    overlayEntry.remove();
-    _overlayEntries.remove(overlayEntry);
-    _overlayEntries.clear();
-    _overlayEntries = [];
-    overlayList = <_ToastListEntry>[].obs;
-    if (_overlayEntries.isEmpty) {
-      // 마지막 toast가 사라지면 overlay 종료
-      _overlayEntries.clear();
-      _overlayEntries = [];
-    }
+
+  void updateToast(_ToastListEntry toast){
+    print('updateToast');
+    OverlayEntry newEntry = OverlayEntry(
+      builder: (BuildContext context) => Positioned(
+        top: 50,
+        left: 10,
+        right: 10,
+        child: Column(
+          children: [
+             Padding(
+              padding: const EdgeInsets.only(top:10.0),
+              child: Container(child: toast.child),
+            ), // toastList의 모든 메시지를 표시
+          ],
+        ),
+      ),
+    );
+
+
+    _overlayEntries.add(newEntry);
+
+    toast.entry = newEntry; //????
+    toast.timer.cancel(); // Cancel the previous timer //????
+    toast.timer = Timer(Duration(seconds: 2), () { //????
+      hideToast(toast); //????
+    });
+    _updateToast();
+  }
+
+  void hideToast(_ToastListEntry toastEntry) {
+
+print('토스트 오버레이 삭제해야함');
+if (_overlayEntries.isNotEmpty) {
+  //entry.remove();
+print('삭제?');
+print('firstEntry 1: ' + _overlayEntries.first.toString());
+  // Remove the first entry in the list
+  OverlayEntry firstEntry = _overlayEntries.removeAt(0);
+  print('firstEntry 2: ' + firstEntry.toString());
+  //firstEntry.remove();
+print('firstEntry 3: ' + _overlayEntries.isEmpty.toString());
+
+  overlayList.remove(toastEntry);
+
+
+
+  // Remove the corresponding entry from the overlayList
+  //overlayList.removeWhere((entry) => entry.entry == firstEntry);
+}
+_updateToast();
+
+    // overlayEntry.remove();
+    // _overlayEntries.remove(overlayEntry);
+    //
+    // overlayList.remove(0);
+    // _updateToast();
+
+    // _overlayEntries.remove(overlayEntry);
+    // _overlayEntries.clear();
+    // _overlayEntries = [];
+    // overlayList = <_ToastListEntry>[].obs;
+
+
+// if (toastListManager.overlayList.isEmpty) {
+//   print('토스트 끝');
+//   overlayList = <_ToastListEntry>[].obs;
+//       toastListManager._overlayEntries.clear();
+//       _overlayEntries = [];
+//     }else{
+//   _updateToast();
+//     }
+
+
+    // toastEntry.cancelTimer(); // 타이머 취소
+    // toastListManager.overlayList.remove(toastEntry);
+    // toastListManager._overlayEntries.removeAt(0);
+    // _overlayEntries.remove(newEntry);
+    // newEntry?.remove();
+    // overlayList = <_ToastListEntry>[].obs;
+    // if (toastListManager.overlayList.isEmpty) {
+    //   toastListManager._overlayEntries.clear();
+    //   _overlayEntries = [];
+    // }
+
+
+
+    // toastListManager._updateToast();
+    // newEntry?.remove();
+    // _overlayEntries.remove(newEntry);
+   // newEntry!.markNeedsBuild();
+
+    // if (_overlayEntries.isEmpty) {
+    //   // 마지막 toast가 사라지면 overlay 종료
+    //   _overlayEntries.clear();
+    //   _overlayEntries = [];
+    // }
   }
 
   // void startQueue(BuildContext context){
@@ -401,11 +510,24 @@ class ToastListManager extends GetxController{
 class _ToastListEntry {
   final Widget child;
   late final Duration duration;
+  late Timer timer;
+  late OverlayEntry entry;
 
   _ToastListEntry({
+
     required this.child,
     required this.duration,
-  });
+
+  }){
+    print('hide');
+    timer = Timer(duration,(){
+      print('hide complete');
+      toastListManager.hideToast(this );
+    });
+  }
+  void cancelTimer() {
+    timer?.cancel();
+  }
 }
 
 ///=============================================================================
