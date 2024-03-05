@@ -239,7 +239,6 @@ class ToastView {
     //toastListManager.timer?.cancel();
 
      // 큐에 담음. 큐는 위젯과 1초 시간이 담긴 객체로 담김
-
     _ToastListEntry creatToast = _ToastListEntry(child: child, duration:const Duration(seconds: 2));
     toastListManager.overlayList.add(creatToast);
 
@@ -298,6 +297,11 @@ class ToastView {
       hideToast(overlayList.last);
       print('첫번째 삭제...?');
     });
+    // overlayList[0].entry = newEntry!;
+    // overlayList[0].timer = Timer(Duration(seconds: 2), () {
+    //   hideToast(overlayList[0]);
+    //   print('첫번째 삭제...?');
+    // });
 
 
   }
@@ -348,12 +352,18 @@ print('firstEntry 3: ' + _overlayEntries.isEmpty.toString());
 }
 _updateToast();
 
+
+
   }
+
+
+
+
+
 //     print('hide 1');
 //     if (_overlayEntries.isNotEmpty) {
 //       print('hide 2');
 //       print('firstEntry 1: ' + _overlayEntries.first.toString());
-//
 //       // Remove the OverlayEntry from _overlayEntries
 //       _overlayEntries.remove(toastEntry.entry);
 //
