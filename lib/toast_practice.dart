@@ -232,6 +232,7 @@ class ToastView {
     );
   }
 
+  ToastListManager toastListManager = Get.put(ToastListManager());
   ///=============================================================================
   void listToast(Widget child,
       BuildContext context,
@@ -240,111 +241,162 @@ class ToastView {
 
      // 큐에 담음. 큐는 위젯과 1초 시간이 담긴 객체로 담김
 
-    ToastListManager toastListManager = Get.put(ToastListManager());
-    //toastListManager.overlayList.add(_ToastListEntry(child: child, duration:const Duration(seconds: 2)));
 
-    if(!toastListManager.listState){
-      // toastListManager.nowToastListEntry?.duration = Duration(seconds: 1);
+    toastListManager.overlayList.add(_ToastListEntry(child: child, duration:const Duration(seconds: 2)));
+    if (toastListManager.newEntry != null) {
+      print(toastListManager.newEntry);
+      // 이미 Overlay가 존재하는 경우
       print('여기');
-      toastListManager.overlayList.add(_ToastListEntry(child: child, duration:const Duration(seconds: 2)));
-
-    }else{
-      toastListManager.overlayList.add(_ToastListEntry(child: child, duration:const Duration(seconds: 2)));
-      toastListManager.startQueue(context);
+      toastListManager._updateToast();
+    } else {
       print('저기');
+      // Overlay가 존재하지 않는 경우
+      toastListManager._showToast(context);
     }
+    // if(!toastListManager.listState){
+    //   // toastListManager.nowToastListEntry?.duration = Duration(seconds: 1);
+    //   print('여기');
+    //   // toastListManager.overlayList.add(_ToastListEntry(child: child, duration:const Duration(seconds: 2)));
+    //   toastListManager.newEntry?.markNeedsBuild();
+    //
+    // }else{
+    //   // toastListManager.overlayList.add(_ToastListEntry(child: child, duration:const Duration(seconds: 2)));
+    //   toastListManager.startQueue(context);
+    //   print('저기');
+    // }
 
   }
 
 }
 
 class ToastListManager extends GetxController{
-  //RxList overlayList = [].obs; // 리스트 객체 생성
   RxList<_ToastListEntry> overlayList = <_ToastListEntry>[].obs;
-  bool listState = true; // list 실행 확인
-  Timer? timer;
   OverlayEntry? newEntry;
- // _ToastListEntry? nowToastListEntry; // 현재 첫번째 객체
+  Timer? timer;
+  List<OverlayEntry> _overlayEntries = [];
 
-  void startQueue(BuildContext context){
-    if (!listState) return;
+  void _updateToast() {
+    if (newEntry != null) {
+      newEntry!.markNeedsBuild();
+    }
+  }
+  void _showToast(BuildContext context) {
+    newEntry = OverlayEntry(
+      builder: (BuildContext context) => Positioned(
+        top: 50,
+        left: 10,
+        right: 10,
+        child: Material(
+         // elevation: 4,
+          borderRadius: BorderRadius.circular(8),
+            child: Column(
+              children: [
+                for (_ToastListEntry obj in overlayList) Padding(
+                  padding: const EdgeInsets.only(top:10.0),
+                  child: Container(child: obj?.child),
+                ), // toastList의 모든 메시지를 표시
+              ],
+            ),
 
-    // 큐 상태 전환
-    listState = false;
+        ),
+      ),
+    );
 
-     // nowToastListEntry = overlayList[0];
+    Overlay.of(context)?.insert(newEntry!);
+    _overlayEntries.add(newEntry!);
 
-      // OverlayEntry newEntry = OverlayEntry(builder: (context) {
-      //
-      //   return Obx(() => ListView.builder(
-      //       itemCount: overlayList.length,
-      //       itemBuilder: (context, index) {
-      //
-      //         timer = Timer(nowToastListEntry!.duration, () {
-      //
-      //           //newEntry?.remove();
-      //           overlayList = [].obs;
-      //
-      //           nowToastListEntry = null;
-      //           overlayList.removeAt(index);
-      //
-      //         });
-      //         return overlayList[index].child;
-      //       }
-      //
-      //   ));
-      // });
-    newEntry = OverlayEntry(builder: (context) {
-      return Obx(() => ListView.builder(
-        itemCount: overlayList.length,
-        itemBuilder: (context, index) {
-          _ToastListEntry toastListEntry = overlayList[index];
-
-          timer = Timer(toastListEntry.duration, () {
-            overlayList.removeAt(index);
-            if (overlayList.isEmpty) {
-              newEntry?.remove();
-              listState = true;
-            }
-          });
-
-          return toastListEntry.child;
-        },
-      ));
+    Timer(Duration(seconds: 2), () {
+      hideToast(newEntry!);
+      newEntry = null;
     });
 
-      Overlay.of(context)?.insert(newEntry!);
-
-      /// 첫번째 객체 2초 지나면 list에서 삭제
-      // timer = Timer(nowToastListEntry!.duration, () {
-      //
-      //   newEntry?.remove();
-      //   overlayList = [].obs;
-      //
-      //   nowToastListEntry = null;
-      //   overlayList.removeAt(0);
-      //
-      // });
-
-    //   /// 마지막 객체 2초가 지나야 overlay 닫음
-    // timer = Timer(lastToastListEntry!.duration, () {
-    //
-    //   newEntry?.remove();
-    //   overlayList = [].obs;
-    //
-    //   lastToastListEntry = null;
-    //   listState = false;
-    //
-    // });
-    // }else {
-    //   print('3');
-    //   queueState =true;
-    // }
-    // if(overlayQueue.isEmpty){
-    //   queueState = true;
-    // }
-
   }
+  void hideToast(OverlayEntry overlayEntry) {
+    overlayEntry.remove();
+    _overlayEntries.remove(overlayEntry);
+    _overlayEntries.clear();
+    _overlayEntries = [];
+    overlayList = <_ToastListEntry>[].obs;
+    if (_overlayEntries.isEmpty) {
+      // 마지막 toast가 사라지면 overlay 종료
+      _overlayEntries.clear();
+      _overlayEntries = [];
+    }
+  }
+
+  // void startQueue(BuildContext context){
+  //   if (!Get.isOverlaysOpen) {
+  //     Get.overlayContext!.insert(buildOverlayEntry(context));
+  //   } else {
+  //     updateOverlayEntry(); // Overlay가 이미 띄워져 있다면 업데이트
+  //   }
+  //   update();
+  // }
+  //
+  // void updateOverlayEntry() {
+  //   OverlayEntry? overlayEntry = Get.find<OverlayEntry>(); // 저장된 OverlayEntry 가져오기
+  //   overlayEntry?.markNeedsBuild(); // OverlayEntry 업데이트 요청
+  // }
+  //
+  // OverlayEntry buildOverlayEntry(BuildContext context) {
+  //   return OverlayEntry(
+  //     builder: (context) => Container(
+  //       child: Positioned(
+  //         top: 100,
+  //         left: 16,
+  //         right: 16,
+  //         child: Material(
+  //           elevation: 4,
+  //           borderRadius: BorderRadius.circular(8),
+  //           child: Container(
+  //             padding: EdgeInsets.all(8),
+  //             child: Column(
+  //               children: [
+  //                 for (_ToastListEntry obj in overlayList) Container(child: obj?.child), // toastList의 모든 메시지를 표시
+  //               ],
+  //             ),
+  //           ),
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  //  }
+
+
+   //=======================================================================================================
+
+ //  //RxList overlayList = [].obs; // 리스트 객체 생성
+ //  RxList<_ToastListEntry> overlayList = <_ToastListEntry>[].obs;
+ //  bool listState = true; // list 실행 확인
+ //  Timer? timer;
+ //  OverlayEntry? newEntry;
+ // // _ToastListEntry? nowToastListEntry; // 현재 첫번째 객체
+ //  _ToastListEntry? toastListEntry;
+ //  void startQueue(BuildContext context){
+ //    if (!listState) return;
+ //
+ //    // 큐 상태 전환
+ //    listState = false;
+ //
+ //    newEntry = OverlayEntry(builder: (context) {
+ //      return Obx(() => ListView.builder(
+ //        itemCount: overlayList.length,
+ //        itemBuilder: (context, index) {
+ //          toastListEntry = overlayList[index];
+ //
+ //          return toastListEntry?.child;
+ //        },
+ //      ));
+ //    });
+ //    timer = Timer(toastListEntry!.duration, () {
+ //      overlayList.removeAt(0);
+ //      if (overlayList.isEmpty) {
+ //        newEntry?.remove();
+ //        listState = true;
+ //      }
+ //    });
+ //      Overlay.of(context)?.insert(newEntry!);
+ //  }
 }
 class _ToastListEntry {
   final Widget child;
