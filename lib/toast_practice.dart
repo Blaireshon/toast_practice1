@@ -246,7 +246,8 @@ class ToastView {
     if (toastListManager._overlayEntries.isEmpty) {
       print('1');
       // Overlay가 존재하지 않는 경우
-      toastListManager._showToast(context);
+      toastListManager._showToast(context,creatToast);
+
     } else {
       print('6');
       // 이미 Overlay가 존재하는 경우
@@ -266,12 +267,17 @@ class ToastView {
   void _updateToast() {
 
     print('4');
-    for (var entry in _overlayEntries) {
-      entry.markNeedsBuild();
-      print('for');
-    }
+    // for (var entry in _overlayEntries) {
+    //   entry.markNeedsBuild();
+    //   print('for');
+    // }
+
+      _overlayEntries.first.markNeedsBuild();
+
   }
-  void _showToast(BuildContext context) {
+
+
+  void _showToast(BuildContext context,_ToastListEntry toast) {
     print('2');
      newEntry = OverlayEntry(
       builder: (BuildContext context) => Positioned(
@@ -280,7 +286,10 @@ class ToastView {
         right: 10,
         child: Column(
           children: [
-
+            // Padding(
+            //   padding: const EdgeInsets.only(top:10.0),
+            //   child: Container(child: toast.child),
+            // ),
             for (_ToastListEntry obj in overlayList) Padding(
               padding: const EdgeInsets.only(top:10.0),
               child: Container(child: obj?.child),
@@ -295,7 +304,11 @@ class ToastView {
     _overlayEntries.add(newEntry!);
     overlayList.last.entry = newEntry!;
     overlayList.last.timer = Timer(Duration(seconds: 2), () {
+      //_overlayEntries.remove(overlayList.last.entry);
+      //overlayList.remove( overlayList.last);
+      //newEntry?.remove();
       hideToast(overlayList.last);
+
       print('첫번째 삭제...?');
     });
 
@@ -333,9 +346,10 @@ class ToastView {
   }
 
   void hideToast(_ToastListEntry toastEntry) {
-print('hide 1');
-if (_overlayEntries.isNotEmpty) {
 
+print('hide 1');
+// if (_overlayEntries.isNotEmpty) {
+    if (_overlayEntries.length>1) {
 print('hide 2');
 print('firstEntry 1: ' + _overlayEntries.first.toString());
 
@@ -344,27 +358,37 @@ _overlayEntries.remove(toastEntry.entry);
 print('firstEntry 3: ' + _overlayEntries.isEmpty.toString());
 
   overlayList.remove(toastEntry);
+print('_overlayEntries.length :' + _overlayEntries.length.toString());
 
+
+    }
+    else if(_overlayEntries.length < 2){
+  newEntry?.remove();
+  _overlayEntries = [];
+  overlayList = [];
+  print('_overlayEntries.length last:' + _overlayEntries.length.toString());
 }
-_updateToast();
+ _updateToast();
 
   }
-//     print('hide 1');
-//     if (_overlayEntries.isNotEmpty) {
-//       print('hide 2');
-//       print('firstEntry 1: ' + _overlayEntries.first.toString());
-//
-//       // Remove the OverlayEntry from _overlayEntries
-//       _overlayEntries.remove(toastEntry.entry);
-//
-//       print('firstEntry 3: ' + _overlayEntries.isEmpty.toString());
-//
-//       // Remove the _ToastListEntry from overlayList
-//       overlayList.remove(toastEntry);
-//     }
-//     _updateToast();
-//     print('hide complete');
-//   }
+
+
+  //   print('hide 1');
+  //   if (_overlayEntries.isNotEmpty) {
+  //     print('hide 2');
+  //     print('firstEntry 1: ' + _overlayEntries.first.toString());
+  //
+  //     // Remove the OverlayEntry from _overlayEntries
+  //     _overlayEntries.remove(toastEntry.entry);
+  //
+  //     print('firstEntry 3: ' + _overlayEntries.isEmpty.toString());
+  //
+  //     // Remove the _ToastListEntry from overlayList
+  //     overlayList.remove(toastEntry);
+  //   }
+  //   _updateToast();
+  //   print('hide complete');
+  // }
 }
 class _ToastListEntry {
   final Widget child;
