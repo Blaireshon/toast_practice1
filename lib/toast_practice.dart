@@ -15,7 +15,6 @@ import 'package:flutter/material.dart';
 // position: toastPosition.BOTTOM
 enum toastPosition { TOP, BOTTOM, CENTER }
 
-
 /// 토스트 위치(사용자 설정)
 /// For example,
 // toastView.createToast(
@@ -36,7 +35,6 @@ enum toastPosition { TOP, BOTTOM, CENTER }
 // );
 typedef PositionBuilder = Widget Function(BuildContext context, Widget child);
 
-
 /// 토스트 실행될 때 나타나는 방향 애니메이션
 /// [TOP] Tween<Offset>(begin: const Offset(0, -1), end: const Offset(0, 0)) : 위에서 아래로
 /// [BOTTOM] Tween<Offset>(begin: const Offset(0, 1), end: const Offset(0, 0)) : 아래에서 위로
@@ -50,14 +48,14 @@ enum toastAnimation { TOP, BOTTOM, RIGHT, LEFT }
 /// [LAYER] toast를 여러개를 겹쳐서 보여줌
 /// [LIST] toast를 쌓아서 여러개를 보여줌
 /// [NORMAL] toast를 하나씩 보여줌.
-enum toastpresentation {LAYER,LIST,NORMAL}
-
+enum toastpresentation { LAYER, LIST, NORMAL }
 
 /// toast를 순차적으로 보여주는 클래스 인스턴스화/객체생성
 /// [toastpresentation]의 [toastpresentation.NORMAL]일때 실행 됨
 ToastManager toastManager = ToastManager();
 ToastListManager toastListManager = ToastListManager();
 
+OverlayEntry? bottomNewEntry ;
 
 /// toast를 생성하는 클래스
 /// [createToast] toast 생성
@@ -65,7 +63,7 @@ ToastListManager toastListManager = ToastListManager();
 /// [_getPositionWidget] 사용자가 위치를 설정하지 않고 [toastPosition] 고정값으로 설정하면 이 함수를 통해 Stack 위젯 반환
 /// --> return Stack
 class ToastView {
-  int addOne(int value) => value +1;
+  int addOne(int value) => value + 1;
 
   Timer? timer;
   Timer? listTimer;
@@ -80,34 +78,24 @@ class ToastView {
   /// Nullable [positionBuilder] toast 사용자 위치 설정
   /// Nullable [animation] { TOP, BOTTOM, RIGHT, LEFT } toast 띄울 때 애니메이션 효과
   /// [toastpresentation]
-   void createToast(
+  void createToast(
       {required Widget child,
       toastPosition? position,
       required BuildContext context,
       Duration duration = const Duration(seconds: 2), // 기본 설정
-        Duration fadeDuration = const Duration(seconds: 0),
+      Duration fadeDuration = const Duration(seconds: 0),
       PositionBuilder? positionBuilder,
       toastAnimation? animation,
-        required toastpresentation presentation
-      }) {
-
-     /// 오버레이 생성 및 큐에 각 toast add
-     /// --> return void
-     /// 
-     if(presentation != toastpresentation.LIST) {
-       showToast(
-           child,
-           position,
-           context,
-           duration,
-           fadeDuration,
-           positionBuilder,
-           animation,
-           presentation);
-     }else {
-       listToast(child, context, presentation);
-     }
-    
+      required toastpresentation presentation}) {
+    /// 오버레이 생성 및 큐에 각 toast add
+    /// --> return void
+    ///
+    if (presentation != toastpresentation.LIST) {
+      showToast(child, position, context, duration, fadeDuration,
+          positionBuilder, animation, presentation);
+    } else {
+      listToast(child, context, presentation);
+    }
 
     /// 큐가 실행 중인지 확인
     /// Bool [queueState] : true 큐 비었음, flase 큐에 실행될 toast객체가 담겨져 있고 하나씩 실행 중
@@ -118,13 +106,12 @@ class ToastView {
     }
   }
 
-
   /// 오버레이 생성 후 Queue add
-   /// --> return void
+  /// --> return void
   /// [child] custom 위젯
   /// Nullable [position] { TOP, BOTTOM, CENTER } 위치 고정값
-   /// [duration] toast가 화면에 띄어지는 시간
-   /// [fadeDuration] toast가 opacity값을 사용해서 사라지는 애니메이션의 시간 설정
+  /// [duration] toast가 화면에 띄어지는 시간
+  /// [fadeDuration] toast가 opacity값을 사용해서 사라지는 애니메이션의 시간 설정
   /// Nullable [positionBuilder]
   // positionBuilder:  (context, child) {
   //           return Stack(
@@ -136,7 +123,7 @@ class ToastView {
   //             ],
   //           );
   //         }
-   /// Nullable [animation] { TOP, BOTTOM, RIGHT, LEFT } toast 띄울 때 애니메이션 효과
+  /// Nullable [animation] { TOP, BOTTOM, RIGHT, LEFT } toast 띄울 때 애니메이션 효과
   void showToast(
       Widget child,
       toastPosition? position,
@@ -146,8 +133,6 @@ class ToastView {
       PositionBuilder? positionBuilder,
       toastAnimation? animation,
       toastpresentation presentation) {
-
-
     /// 오버레이 생성
     /// --> return OverlayEntry
     /// 사용자가 toast 커스텀을 어떻게 했는지에 따라 반환 위젯이 달라지고 그 위젯들은 오버레이 객체에 담겨 Queue를 통해 순차적으로 실행됨
@@ -159,16 +144,18 @@ class ToastView {
       Widget resultWidget;
 
       if (positionBuilder != null) {
-      resultWidget = positionBuilder(context, child);
+        resultWidget = positionBuilder(context, child);
         if (animation != null || fadeDuration != const Duration(seconds: 0)) {
-          resultWidget = _AnimationToast(resultWidget, animation, duration, fadeDuration);
+          resultWidget =
+              _AnimationToast(resultWidget, animation, duration, fadeDuration);
         }
       } else {
-      resultWidget = _getPositionWidget(child, position);
+        resultWidget = _getPositionWidget(child, position);
         if (animation != null || fadeDuration != const Duration(seconds: 0)) {
-          resultWidget = _AnimationToast(resultWidget, animation, duration, fadeDuration);
+          resultWidget =
+              _AnimationToast(resultWidget, animation, duration, fadeDuration);
         }
-        }
+      }
 
       return resultWidget;
     });
@@ -181,46 +168,44 @@ class ToastView {
     // });
     if (presentation == toastpresentation.NORMAL) {
       toastManager.overlayQueue.add(_ToastEntry(
-        // toast 하나가 만들어질때마다 큐에 담음
-          entry: newEntry, duration: duration, fadeDuration: fadeDuration));
+          // toast 하나가 만들어질때마다 큐에 담음
+          entry: newEntry,
+          duration: duration,
+          fadeDuration: fadeDuration));
       //Overlay.of(context)?.insert(newEntry); // overlay 실행
       //return newEntry;
     } else if (presentation == toastpresentation.LAYER) {
       Overlay.of(context)?.insert(newEntry); // overlay 실행
 
       final totalDuration = duration + fadeDuration;
-      timer = Timer(totalDuration,(){
+      timer = Timer(totalDuration, () {
         newEntry?.remove();
       });
     }
   }
 
   /// position (toast 위치 고정값)
-   /// --> return Stack
+  /// --> return Stack
   /// 사용자가 직접 위치설정안하고 기존 고정되어있는 위치를 사용할 때
   /// position: toastPosition.CENTER,
 
-   /// [toastPosition.TOP] Positioned(top: 50.0, child: child);
-   /// [toastPosition.BOTTOM] Positioned(bottom: 50.0, child: child);
-   /// [toastPosition.CENTER] Positioned(bottom: 50.0, child: child);
+  /// [toastPosition.TOP] Positioned(top: 50.0, child: child);
+  /// [toastPosition.BOTTOM] Positioned(bottom: 50.0, child: child);
+  /// [toastPosition.CENTER] Positioned(bottom: 50.0, child: child);
   Widget _getPositionWidget(Widget child, toastPosition? position) {
     Widget positionedWidget;
     switch (position) {
       case toastPosition.TOP:
-        positionedWidget =
-            Positioned(top: 50.0, child: child);
+        positionedWidget = Positioned(top: 50.0, child: child);
         break;
       case toastPosition.BOTTOM:
-         positionedWidget =
-            Positioned(bottom: 50.0, child: child);
+        positionedWidget = Positioned(bottom: 50.0, child: child);
         break;
       case toastPosition.CENTER:
-        positionedWidget =
-            Positioned(child: child);
+        positionedWidget = Positioned(child: child);
         break;
       default:
-        positionedWidget =
-            Positioned(bottom: 50.0, child: child);
+        positionedWidget = Positioned(bottom: 50.0, child: child);
         break;
       //return Positioned(bottom: 50.0, left: 24.0, right: 24.0, child: child);
     }
@@ -232,81 +217,140 @@ class ToastView {
   }
 
   ToastListManager toastListManager = Get.put(ToastListManager());
+
+
   ///=============================================================================
-  void listToast(Widget child,
-      BuildContext context,
-      toastpresentation presentation) {
+  void listToast(
+      Widget child, BuildContext context, toastpresentation presentation) {
     //toastListManager.timer?.cancel();
 
-     // 큐에 담음. 큐는 위젯과 1초 시간이 담긴 객체로 담김
-    _ToastListEntry creatToast = _ToastListEntry(child: child, duration:const Duration(seconds: 2));
-    toastListManager.overlayList.add(creatToast);
+    // // 큐에 담음. 큐는 위젯과 1초 시간이 담긴 객체로 담김
+    // _ToastListEntry creatToast =
+    //     _ToastListEntry(child: child, duration: const Duration(seconds: 2));
+    // toastListManager.overlayList.add(creatToast);
+    //
+    // if (toastListManager._overlayEntries.isEmpty) {
+    //   print('1');
+    //   // Overlay가 존재하지 않는 경우
+    //   toastListManager._showToast(context, creatToast);
+    // } else {
+    //   print('6');
+    //   // 이미 Overlay가 존재하는 경우
+    //   toastListManager.updateToast(creatToast);
+    // }
 
-    if (toastListManager._overlayEntries.isEmpty) {
-      print('1');
-      // Overlay가 존재하지 않는 경우
-      toastListManager._showToast(context);
-    } else {
-      print('6');
-      // 이미 Overlay가 존재하는 경우
-      toastListManager.updateToast(creatToast);
-    }
+    ///++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+    /// 처음에 바닥에 깔릴 overlayEntry 만들기
+   if(bottomNewEntry == null) {
+     print('처음에만');
+
+
+     bottomNewEntry = OverlayEntry(
+       builder: (BuildContext context) =>
+           Positioned(
+             top: 50,
+             left: 10,
+             right: 10,
+             child: Column(
+               children: [
+                 // Padding(
+                 //   padding: const EdgeInsets.only(top:10.0),
+                 //   child: Container(child: toast.child),
+                 // ),
+                 for (_ToastListEntry obj in toastListManager.overlayList)
+                   Padding(
+                     padding: const EdgeInsets.only(top: 10.0),
+                     child: Container(child: obj?.child),
+                   ), // toastList의 모든 메시지를 표시
+               ],
+             ),
+           ),
+     );
+     Overlay.of(context)?.insert(bottomNewEntry!);
+   }else if(bottomNewEntry != null && !bottomNewEntry!.mounted){
+     print('처음아님');
+   }
+    _ToastListEntry creatToast = _ToastListEntry(child: child, duration: const Duration(seconds: 2));
+
+   toastListManager.overlayList.add(creatToast);
+
+   toastListManager.updateToast(creatToast);
+    ///++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   }
 }
 
 // class ToastListManager extends GetxController{
-  class ToastListManager{
+class ToastListManager {
   //RxList<_ToastListEntry> overlayList = <_ToastListEntry>[].obs;
-    List<_ToastListEntry> overlayList = [];
+  List<_ToastListEntry> overlayList = [];
   OverlayEntry? newEntry;
+
+
   //Timer? timer;
   List<OverlayEntry> _overlayEntries = [];
 
   void _updateToast() {
-
-    print('4');
-    for (var entry in _overlayEntries) {
-      entry.markNeedsBuild();
-      print('for');
-    }
-  }
-  void _showToast(BuildContext context) {
-    print('2');
-     newEntry = OverlayEntry(
-      builder: (BuildContext context) => Positioned(
-        top: 50,
-        left: 10,
-        right: 10,
-        child: Column(
-          children: [
-
-            for (_ToastListEntry obj in overlayList) Padding(
-              padding: const EdgeInsets.only(top:10.0),
-              child: Container(child: obj?.child),
-            ), // toastList의 모든 메시지를 표시
-          ],
-        ),
-      ),
-    );
-
-
-    Overlay.of(context)?.insert(newEntry!);
-    _overlayEntries.add(newEntry!);
-    overlayList.last.entry = newEntry!;
-    overlayList.last.timer = Timer(Duration(seconds: 2), () {
-      hideToast(overlayList.last);
-      print('첫번째 삭제...?');
-    });
-    // overlayList[0].entry = newEntry!;
-    // overlayList[0].timer = Timer(Duration(seconds: 2), () {
-    //   hideToast(overlayList[0]);
-    //   print('첫번째 삭제...?');
-    // });
+    // print('4');
+    // // for (var entry in _overlayEntries) {
+    // //   entry.markNeedsBuild();
+    // //   print('for');
+    // // }
+    //
+    // _overlayEntries.first.markNeedsBuild();
+    ///++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    //  for (var entry in _overlayEntries) {
+    //       entry.markNeedsBuild();
+    //       print('for');
+    //     }
+    bottomNewEntry?.markNeedsBuild();
+    ///++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
   }
 
-  void updateToast(_ToastListEntry toast){
+  // void _showToast(BuildContext context, _ToastListEntry toast) {
+  //   print('2');
+  //   newEntry = OverlayEntry(
+  //     builder: (BuildContext context) => Positioned(
+  //       top: 50,
+  //       left: 10,
+  //       right: 10,
+  //       child: Column(
+  //         children: [
+  //           // Padding(
+  //           //   padding: const EdgeInsets.only(top:10.0),
+  //           //   child: Container(child: toast.child),
+  //           // ),
+  //           for (_ToastListEntry obj in overlayList)
+  //             Padding(
+  //               padding: const EdgeInsets.only(top: 10.0),
+  //               child: Container(child: obj?.child),
+  //             ), // toastList의 모든 메시지를 표시
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  //
+  //   Overlay.of(context)?.insert(newEntry!);
+  //   _overlayEntries.add(newEntry!);
+  //   overlayList.last.entry = newEntry!;
+  //   overlayList.last.timer = Timer(Duration(seconds: 2), () {
+  //     //_overlayEntries.remove(overlayList.last.entry);
+  //     //overlayList.remove( overlayList.last);
+  //     //newEntry?.remove();
+  //     hideToast(overlayList.last);
+  //
+  //     print('첫번째 삭제...?');
+  //   });
+  //   // overlayList[0].entry = newEntry!;
+  //   // overlayList[0].timer = Timer(Duration(seconds: 2), () {
+  //   //   hideToast(overlayList[0]);
+  //   //   print('첫번째 삭제...?');
+  //   // });
+  // }
+
+  void updateToast(_ToastListEntry toast) {
     print('7');
     OverlayEntry newEntry = OverlayEntry(
       builder: (BuildContext context) => Positioned(
@@ -315,15 +359,14 @@ class ToastView {
         right: 10,
         child: Column(
           children: [
-             Padding(
-              padding: const EdgeInsets.only(top:10.0),
+            Padding(
+              padding: const EdgeInsets.only(top: 10.0),
               child: Container(child: toast.child),
             ), // toastList의 모든 메시지를 표시
           ],
         ),
       ),
     );
-
 
     _overlayEntries.add(newEntry);
 
@@ -337,45 +380,50 @@ class ToastView {
   }
 
   void hideToast(_ToastListEntry toastEntry) {
-print('hide 1');
-if (_overlayEntries.isNotEmpty) {
-
-print('hide 2');
-print('firstEntry 1: ' + _overlayEntries.first.toString());
-
-_overlayEntries.remove(toastEntry.entry);
-
-print('firstEntry 3: ' + _overlayEntries.isEmpty.toString());
-
-  overlayList.remove(toastEntry);
-
-}
-_updateToast();
-
-
-
-  }
-
-
-
-
 
 //     print('hide 1');
-//     if (_overlayEntries.isNotEmpty) {
+// // if (_overlayEntries.isNotEmpty) {
+//     if (_overlayEntries.length > 1) {
 //       print('hide 2');
 //       print('firstEntry 1: ' + _overlayEntries.first.toString());
-//       // Remove the OverlayEntry from _overlayEntries
+//
 //       _overlayEntries.remove(toastEntry.entry);
 //
 //       print('firstEntry 3: ' + _overlayEntries.isEmpty.toString());
 //
-//       // Remove the _ToastListEntry from overlayList
 //       overlayList.remove(toastEntry);
+//       print('_overlayEntries.length :' + _overlayEntries.length.toString());
+//       _updateToast();
+//     } else if (_overlayEntries.length < 2) {
+//       newEntry?.remove();
+//       _overlayEntries = [];
+//       overlayList = [];
+//       print('_overlayEntries.length last:' + _overlayEntries.length.toString());
 //     }
-//     _updateToast();
-//     print('hide complete');
-//   }
+//     //_updateToast();
+
+    ///++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    if(_overlayEntries.isNotEmpty){
+      print('삭제해야지');
+    _overlayEntries.remove(toastEntry.entry);
+    print('_overlayEntries.length :' + _overlayEntries.length.toString());
+    overlayList.remove(toastEntry);
+    _updateToast();
+    }else{
+      print('전체삭제');
+      _overlayEntries = [];
+      overlayList = [];
+      bottomNewEntry?.remove();
+      bottomNewEntry = null;
+    }
+
+    ///++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+  }
+
+
 }
+
 class _ToastListEntry {
   final Widget child;
   late final Duration duration;
@@ -383,26 +431,22 @@ class _ToastListEntry {
   late OverlayEntry entry;
 
   _ToastListEntry({
-
     required this.child,
     required this.duration,
-
-  }){
+  }) {
     print('timer 객체 생성');
-    timer = Timer(duration,(){
-
+    timer = Timer(duration, () {
       toastListManager.hideToast(this);
       print('timer 객체 생성. 삭제');
     });
   }
+
   void cancelTimer() {
     timer?.cancel();
   }
 }
 
 ///=============================================================================
-
-
 
 /// toast 실행 순서 관리
 /// Queue<_ToastEntry> [overlayQueue]  toast 객체 관리할 Queue
@@ -425,7 +469,6 @@ class ToastManager {
   /// 순차적으로 큐에 담긴 오버레이 실행.
   /// --> return void
   void startQueue(BuildContext context) {
-
     if (overlayQueue.isNotEmpty && entryQueue == null) {
       // 중복 실행되지 않도록 queue 실행 중으로 상태 전환.
       queueState = false;
@@ -437,8 +480,7 @@ class ToastManager {
       Overlay.of(context)?.insert(entryQueue!);
 
       // 해당 오버레이가 화면에 띄어져야 할 시간 : duration + fadeDuration
-      final totalDuration = toastEntry.duration+ toastEntry.fadeDuration;
-
+      final totalDuration = toastEntry.duration + toastEntry.fadeDuration;
 
       timer = Timer(totalDuration, () {
         print('totalDuration ' + totalDuration.toString());
@@ -465,11 +507,10 @@ class _ToastEntry {
   final Duration duration;
   final Duration fadeDuration;
 
-  _ToastEntry({
-    required this.entry,
-    required this.duration,
-    required this.fadeDuration
-  });
+  _ToastEntry(
+      {required this.entry,
+      required this.duration,
+      required this.fadeDuration});
 }
 
 /// Animation (slide효과 [animation], fade효과[fadeDuration])
@@ -478,8 +519,9 @@ class _ToastEntry {
 /// Duration [duration] 사용자가 설정한 toast 시간
 /// Duration [fadeDuration] 사용자가 설정한 fade 효과 시간
 class _AnimationToast extends StatefulWidget {
-
-  _AnimationToast(this.child, this.animation,this.duration, this.fadeDuration, {Key? key}) : super(key: key);
+  _AnimationToast(this.child, this.animation, this.duration, this.fadeDuration,
+      {Key? key})
+      : super(key: key);
 
   final Widget child;
   final toastAnimation? animation;
@@ -488,12 +530,11 @@ class _AnimationToast extends StatefulWidget {
 
   @override
   AnimationToastState createState() => AnimationToastState();
-
 }
+
 ///_AnimationToast 위젯 상태 관리, 애니메이션 제어
 class AnimationToastState extends State<_AnimationToast>
     with TickerProviderStateMixin {
-
   /// [animation] slide효과 애니메이션 제어
   late AnimationController _animationController;
   late Animation<Offset> topAnimation;
@@ -513,19 +554,19 @@ class AnimationToastState extends State<_AnimationToast>
   /// 리소스 할당
   @override
   void initState() {
-
     super.initState();
 
     /// [animation] 기본 설정 1초
     _animationController =
         AnimationController(vsync: this, duration: const Duration(seconds: 1));
-        // AnimationController(vsync: this, duration: const Duration(seconds: 1));
+    // AnimationController(vsync: this, duration: const Duration(seconds: 1));
 
     /// 위에서 아래로
     topAnimation =
         Tween<Offset>(begin: const Offset(0, -1), end: const Offset(0, 0))
             .animate(CurvedAnimation(
                 parent: _animationController!, curve: Curves.easeInCubic));
+
     /// 아래에서 위로
     bottomAnimation =
         Tween<Offset>(begin: const Offset(0, 1), end: const Offset(0, 0))
@@ -550,18 +591,19 @@ class AnimationToastState extends State<_AnimationToast>
             .animate(CurvedAnimation(
                 parent: _animationController!, curve: Curves.easeInCubic));
 
-
     /// [fadeDuration] 사용자가 설정한 시간만큼 fade애니메이션 실행
-    _fadeController = AnimationController(vsync: this, duration: widget.fadeDuration);
+    _fadeController =
+        AnimationController(vsync: this, duration: widget.fadeDuration);
 
     /// 나타난 toast 스르륵 사라짐
-    _fadeAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(_fadeController);
+    _fadeAnimation =
+        Tween<double>(begin: 1.0, end: 0.0).animate(_fadeController);
 
     /// [animation] 설정한 값으로 애니메이션 시작
     _animationController.forward();
 
     /// [fadeDuration] 사용자가 설정한 값이 있으면 toast보여주는 시간[duration]이 지난 후 [fadeDuration]실행 됨
-    if(widget.fadeDuration != const Duration(seconds: 0)) {
+    if (widget.fadeDuration != const Duration(seconds: 0)) {
       // 이전에 실행 중인 타이머가 있으면 취소
       // _timer?.cancel();
 
@@ -571,7 +613,6 @@ class AnimationToastState extends State<_AnimationToast>
         _fadeController.forward();
       });
     }
-
   }
 
   /// [animation] 설정한 값으로 return
@@ -592,7 +633,6 @@ class AnimationToastState extends State<_AnimationToast>
         return nullAnimation;
     }
   }
-
 
   /// State객체가 제거되기 전 실행. 리소스 해제
   @override
@@ -615,6 +655,5 @@ class AnimationToastState extends State<_AnimationToast>
         child: widget.child,
       ),
     );
-
   }
 }
