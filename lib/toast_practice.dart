@@ -409,6 +409,8 @@ class ToastListManager {
     print('_overlayEntries.length :' + _overlayEntries.length.toString());
     overlayList.remove(toastEntry);
     _updateToast();
+    if(_overlayEntries.isNotEmpty){
+      _updateToast();
     }else{
       print('전체삭제');
       _overlayEntries = [];
@@ -416,6 +418,14 @@ class ToastListManager {
       bottomNewEntry?.remove();
       bottomNewEntry = null;
     }
+    }
+    // else{
+    //   print('전체삭제');
+    //   _overlayEntries = [];
+    //   overlayList = [];
+    //   bottomNewEntry?.remove();
+    //   bottomNewEntry = null;
+    // }
 
     ///++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
