@@ -50,11 +50,13 @@ enum toastAnimation { TOP, BOTTOM, RIGHT, LEFT }
 /// [NORMAL] toast를 하나씩 보여줌.
 enum toastpresentation { LAYER, LIST, NORMAL }
 
-/// toast를 순차적으로 보여주는 클래스 인스턴스화/객체생성
-/// [toastpresentation]의 [toastpresentation.NORMAL]일때 실행 됨
+/// [toastpresentation.NORMAL]일때 실행 됨
 ToastManager toastManager = ToastManager();
+
+/// [toastpresentation.LIST]일때 실행 됨
 ToastListManager toastListManager = ToastListManager();
 
+/// [toastpresentation.LIST]일때 가장 기초가되는 overlayEntry
 OverlayEntry? bottomNewEntry;
 
 /// toast를 생성하는 클래스
@@ -66,7 +68,7 @@ class ToastView {
   int addOne(int value) => value + 1;
 
   Timer? timer;
-  Timer? listTimer;
+  //Timer? listTimer;
 
   /// toast생성
   /// --> return void
@@ -224,7 +226,7 @@ class ToastView {
 
     /// 처음에 바닥에 깔릴 overlayEntry 만들기
     if (bottomNewEntry == null) {
-      print('처음에만');
+      print('처음');
 
       bottomNewEntry = OverlayEntry(
         builder: (BuildContext context) => Positioned(
@@ -245,22 +247,24 @@ class ToastView {
       );
       Overlay.of(context)?.insert(bottomNewEntry!);
     } else if (bottomNewEntry != null && !bottomNewEntry!.mounted) {
-      print('처음아님');
+      print('Bottom overlayEntry 실행중');
     }
     _ToastListEntry creatToast =
         _ToastListEntry(child: child, duration: const Duration(seconds: 2));
 
     toastListManager.overlayList.add(creatToast);
 
-    toastListManager.updateToast(creatToast);
+    toastListManager.insertToast(creatToast);
 
   }
 }
 
 ///Toast List 실행 순서 관리 [toastpresentation.LIST]
+/// [overlayList] 화면에 보여줄 토스트 객체 리스트
+/// [_overlayEntries] 각 토스트의 overlayEntry.
 class ToastListManager {
   List<_ToastListEntry> overlayList = [];
-  OverlayEntry? newEntry;
+ // OverlayEntry? newEntry;
   List<OverlayEntry> _overlayEntries = [];
 
   /// toast가 새로 생기거나 사라질때 update
@@ -269,7 +273,7 @@ class ToastListManager {
   }
 
   /// 이미 실행 된 overlayEntry가 있는데 새로운 toast를 추가할 때
-  void updateToast(_ToastListEntry toast) {
+  void insertToast(_ToastListEntry toast) {
     OverlayEntry newEntry = OverlayEntry(
       builder: (BuildContext context) => Positioned(
         top: 50,
@@ -286,10 +290,13 @@ class ToastListManager {
       ),
     );
 
+    // 리스트에 추가
     _overlayEntries.add(newEntry);
 
     toast.entry = newEntry;
     //toast.timer.cancel(); // Cancel the previous timer
+
+    // 생성된지 2초가 지나면 해당 객체 사라짐
     toast.timer = Timer(Duration(seconds: 2), () {
       hideToast(toast);
     });
@@ -302,10 +309,12 @@ class ToastListManager {
     if (_overlayEntries.isNotEmpty) {
       _overlayEntries.remove(toastEntry.entry);
       overlayList.remove(toastEntry);
-      _updateToast();
+      //_updateToast();
+      // 화면에 보여줄 list가 남아 있으면 다시 실행
       if (_overlayEntries.isNotEmpty) {
         _updateToast();
-      } else {
+        // 화면에 보여줄 list가 없으면 토스트 종료
+      }else{
         _overlayEntries = [];
         overlayList = [];
         bottomNewEntry?.remove();
