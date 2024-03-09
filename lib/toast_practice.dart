@@ -233,8 +233,9 @@ class ToastView {
           right: 10,
           child: Column(
             children: [
-              for (_ToastListEntry obj in toastListManager.overlayList)
-                Padding(
+              //for (_ToastListEntry obj in toastListManager.overlayList)
+              for (_ToastListEntry obj in toastListManager.overlayList.reversed) // 역순으로 순회
+              Padding(
                   padding: const EdgeInsets.only(top: 10.0),
                   child: Container(child: obj?.child),
                 ), // toastList의 모든 메시지를 표시
