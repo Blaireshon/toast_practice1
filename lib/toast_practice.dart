@@ -65,7 +65,7 @@ OverlayEntry? bottomNewEntry;
 /// [_getPositionWidget] 사용자가 위치를 설정하지 않고 [toastPosition] 고정값으로 설정하면 이 함수를 통해 Stack 위젯 반환
 /// --> return Stack
 class ToastView {
-  int addOne(int value) => value + 1;
+  static int addOne(int value) => value + 1;
 
   Timer? timer;
   //Timer? listTimer;
@@ -80,7 +80,8 @@ class ToastView {
   /// Nullable [positionBuilder] toast 사용자 위치 설정
   /// Nullable [animation] { TOP, BOTTOM, RIGHT, LEFT } toast 띄울 때 애니메이션 효과
   /// [toastpresentation]
-  void createToast(
+  //    void createToast(
+   ToastView.createToast(
       {required Widget child,
       toastPosition? position,
       required BuildContext context,
