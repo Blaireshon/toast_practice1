@@ -1,3 +1,89 @@
+/// Example
+// @override
+// Widget build(BuildContext context) {
+//   return Scaffold(
+//       appBar: AppBar(
+//         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+//         title: Text(widget.title),
+//       ),
+//       body: Center(
+//         child: Column(
+//           children: [
+//             Container(
+//               width: 200,
+//               child: ElevatedButton(
+//                 onPressed: () {
+                    ///이벤트 발생 시 toast 생성할 메서드 호출
+//                   _topToast('top position', context);
+//                 },
+//                 style: ElevatedButton.styleFrom(
+//                   backgroundColor: Color(0xffFCAF17),
+//                   elevation: 0,
+//                 ),
+//                 child: const Text('top position',
+//                     style: TextStyle(color: Colors.white)),
+//               ),
+//             ),
+//             SizedBox(height: 10,),
+//             Container(
+//               width: 200,
+//               child: ElevatedButton(
+//                 onPressed: () {
+//                   _incrementCounter();
+                     ///이벤트 발생 시 toast 생성할 메서드 호출
+//                   _defaultToast('$_counter', context);
+//                 },
+//                 style: ElevatedButton.styleFrom(
+//                   backgroundColor: Colors.blue,
+//                   elevation: 0,
+//                 ),
+//                 child: const Text('default',
+//                     style: TextStyle(color: Colors.white)),
+//               ),
+//             ),
+//
+///toast 생성 메서드
+// void _topToast(String msg, BuildContext context) {
+//
+//   ///toast 생성
+//   ToastView.createToast(
+//     child: toast(msg),
+//     context: context,
+//     duration: const Duration(milliseconds: 400), //시간 설정
+//     position: toastPosition.TOP,
+//     presentation: toastpresentation.LAYER,
+//   );
+// }
+// void _defaultToast(String msg, BuildContext context){
+//   ToastView.createToast(
+//     child: Text(msg),
+//     context: context,
+//   );
+// }
+//
+// }
+///toast Custom 위젯.
+// ///child 위젯 설정
+// Widget toast(String msg) {
+//   return Container(
+//     height: 50,
+//     width: 300,
+//     decoration: BoxDecoration(
+//       borderRadius: BorderRadius.circular(10.0),
+//       border: Border.all(),
+//       // color: const Color(0xff67CC36),
+//       color: Colors.white,
+//     ),
+//     child: Center(
+//         child: Text(msg,
+//             style: const TextStyle(
+//                 color: Colors.black54,
+//                 decoration: TextDecoration.none,
+//                 fontSize: 20),
+//             textAlign: TextAlign.center)),
+//   );
+// }
+
 library toast_practice;
 
 import 'dart:async';
@@ -47,10 +133,10 @@ enum toastAnimation { TOP, BOTTOM, RIGHT, LEFT }
 /// toast를 어떻게 보여줄지 설정
 /// [LAYER] toast를 여러개를 겹쳐서 보여줌
 /// [LIST] toast를 쌓아서 여러개를 보여줌
-/// [NORMAL] toast를 하나씩 보여줌.
-enum toastpresentation { LAYER, LIST, NORMAL }
+/// [TIMER] toast를 하나씩 보여줌.
+enum toastpresentation { LAYER, LIST, TIMER }
 
-/// [toastpresentation.NORMAL]일때 실행 됨
+/// [toastpresentation.TIMER]일때 실행 됨
 ToastManager toastManager = ToastManager();
 
 /// [toastpresentation.LIST]일때 실행 됨
@@ -80,7 +166,6 @@ class ToastView {
   /// Nullable [positionBuilder] toast 사용자 위치 설정
   /// Nullable [animation] { TOP, BOTTOM, RIGHT, LEFT } toast 띄울 때 애니메이션 효과
   /// [toastpresentation]
-  //    void createToast(
    ToastView.createToast(
       {required Widget child,
       toastPosition? position,
@@ -89,7 +174,7 @@ class ToastView {
       Duration fadeDuration = const Duration(seconds: 0),
       PositionBuilder? positionBuilder,
       toastAnimation? animation,
-      required toastpresentation presentation}) {
+        toastpresentation presentation = toastpresentation.LAYER}) {
     /// 오버레이 생성 및 큐에 각 toast add
     /// --> return void
     ///
@@ -169,7 +254,7 @@ class ToastView {
     //   required this.duration, : toast를 얼만큼 화면에 띄울 지 시간설정
     //   required this.fadeDuration : toast가 사라지는 효과 시간 설정
     // });
-    if (presentation == toastpresentation.NORMAL) {
+    if (presentation == toastpresentation.TIMER) {
       toastManager.overlayQueue.add(_ToastEntry(
           // toast 하나가 만들어질때마다 큐에 담음
           entry: newEntry,
@@ -208,7 +293,7 @@ class ToastView {
         positionedWidget = Positioned(child: child);
         break;
       default:
-        positionedWidget = Positioned(bottom: 50.0, child: child);
+        positionedWidget = Positioned(top: 50.0, child: child);
         break;
       //return Positioned(bottom: 50.0, left: 24.0, right: 24.0, child: child);
     }
@@ -344,7 +429,7 @@ class _ToastListEntry {
 
 ///=============================================================================
 
-/// toast 실행 순서 관리 [toastpresentation.LAYER], [toastpresentation.NORMAL]
+/// toast 실행 순서 관리 [toastpresentation.LAYER], [toastpresentation.TIMER]
 /// Queue<_ToastEntry> [overlayQueue]  toast 객체 관리할 Queue
 //class _ToastEntry {
 //   final OverlayEntry entry;
@@ -553,3 +638,6 @@ class AnimationToastState extends State<_AnimationToast>
     );
   }
 }
+
+
+
