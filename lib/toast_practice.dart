@@ -88,6 +88,7 @@ library toast_practice;
 
 import 'dart:async';
 import 'dart:collection';
+//import 'dart:js';
 import 'package:get/get.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -167,7 +168,7 @@ class ToastView {
   /// Nullable [animation] { TOP, BOTTOM, RIGHT, LEFT } toast 띄울 때 애니메이션 효과
   /// [toastpresentation]
    ToastView.createToast(
-      {required Widget child,
+      {required dynamic child,
       toastPosition? position,
       required BuildContext context,
       Duration duration = const Duration(seconds: 2), // 기본 설정
@@ -175,9 +176,21 @@ class ToastView {
       PositionBuilder? positionBuilder,
       toastAnimation? animation,
         toastpresentation presentation = toastpresentation.LAYER}) {
+
+     child = defaultWidget(child, context);
+     // if (child is String) {
+     //   // 문자열일 경우 디폴트 위젯에 텍스트로 추가
+     //   child = defaultWidget(child, context);
+     // } else if (child is Widget) {
+     //   // 위젯일 경우 그대로 사용
+     //   child = child;
+     // } else {
+     //   // 예외 처리
+     //   throw Exception('Child must be a String or a Widget');
+     // }
+
     /// 오버레이 생성 및 큐에 각 toast add
     /// --> return void
-    ///
     if (presentation != toastpresentation.LIST) {
       showToast(child, position, context, duration, fadeDuration,
           positionBuilder, animation, presentation);
@@ -341,6 +354,34 @@ class ToastView {
     toastListManager.overlayList.add(creatToast);
 
     toastListManager.insertToast(creatToast);
+
+  }
+
+  /// defaultWidget. Toast 형식이 정해져 있음. String과 Widget이 아래 Container의 child로 들어감.
+  Widget defaultWidget(dynamic child, BuildContext context){
+    return Container(
+      width: MediaQuery.of(context).size.width * 0.7,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10.0),
+        color: const Color(0xffFCAF17),
+      ),
+      child: childWidget(child),
+    );
+  }
+  Widget childWidget(dynamic child){
+    if( child is String){
+      return Center(
+          child: Text(child,
+              style: const TextStyle(
+                  color: Colors.white,
+                  decoration: TextDecoration.none,
+                  fontSize: 20),
+              textAlign: TextAlign.center));
+    }else if(child is Widget){
+      return child;
+    }else{
+      throw Exception('Child must be a String or a Widget');
+    }
 
   }
 }
