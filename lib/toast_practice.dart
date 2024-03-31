@@ -306,7 +306,7 @@ class ToastView {
         positionedWidget = Positioned(child: child);
         break;
       default:
-        positionedWidget = Positioned(top: 50.0, child: child);
+        positionedWidget = Positioned(bottom: 50.0, child: child);
         break;
       //return Positioned(bottom: 50.0, left: 24.0, right: 24.0, child: child);
     }
