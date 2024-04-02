@@ -360,6 +360,7 @@ class ToastView {
   /// defaultWidget. Toast 형식이 정해져 있음. String과 Widget이 아래 Container의 child로 들어감.
   Widget defaultWidget(dynamic child, BuildContext context){
     return Container(
+      height: 50,
       width: MediaQuery.of(context).size.width * 0.7,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10.0),
