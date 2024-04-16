@@ -171,8 +171,8 @@ class ToastView {
       {required dynamic child,
       toastPosition? position,
       required BuildContext context,
-      Duration duration = const Duration(seconds: 2), // 기본 설정
-      Duration fadeDuration = const Duration(seconds: 0),
+      Duration? duration = const Duration(seconds: 2), // 기본 설정
+      Duration? fadeDuration = const Duration(seconds: 0),
       PositionBuilder? positionBuilder,
       toastAnimation? animation,
         toastpresentation presentation = toastpresentation.LAYER}) {
