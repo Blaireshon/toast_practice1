@@ -135,15 +135,15 @@ enum toastAnimation { TOP, BOTTOM, RIGHT, LEFT }
 /// [LAYER] toast를 여러개를 겹쳐서 보여줌
 /// [LIST] toast를 쌓아서 여러개를 보여줌
 /// [TIMER] toast를 하나씩 보여줌.
-enum toastpresentation { LAYER, LIST, TIMER }
+enum toastPresentation { LAYER, LIST, TIMER }
 
-/// [toastpresentation.TIMER]일때 실행 됨
+/// [toastPresentation.TIMER]일때 실행 됨
 ToastManager toastManager = ToastManager();
 
-/// [toastpresentation.LIST]일때 실행 됨
+/// [toastPresentation.LIST]일때 실행 됨
 ToastListManager toastListManager = ToastListManager();
 
-/// [toastpresentation.LIST]일때 가장 기초가되는 overlayEntry
+/// [toastPresentation.LIST]일때 가장 기초가되는 overlayEntry
 OverlayEntry? bottomNewEntry;
 
 /// toast를 생성하는 클래스
@@ -166,16 +166,16 @@ class ToastView {
   /// [fadeDuration] toast가 opacity값을 사용해서 사라지는 애니메이션의 시간 설정
   /// Nullable [positionBuilder] toast 사용자 위치 설정
   /// Nullable [animation] { TOP, BOTTOM, RIGHT, LEFT } toast 띄울 때 애니메이션 효과
-  /// [toastpresentation]
+  /// [toastPresentation]
    ToastView.createToast(
       {required dynamic child,
-      toastPosition? position,
+      toastPosition? position = toastPosition.BOTTOM,
       required BuildContext context,
-      Duration? duration = const Duration(seconds: 2), // 기본 설정
-      Duration? fadeDuration = const Duration(seconds: 0),
+      Duration duration = const Duration(seconds: 2), // 기본 설정
+      Duration fadeDuration = const Duration(seconds: 0),
       PositionBuilder? positionBuilder,
       toastAnimation? animation,
-        toastpresentation presentation = toastpresentation.LAYER}) {
+        toastPresentation presentation = toastPresentation.LAYER}) {
 
      child = defaultWidget(child, context);
      // if (child is String) {
@@ -191,7 +191,7 @@ class ToastView {
 
     /// 오버레이 생성 및 큐에 각 toast add
     /// --> return void
-    if (presentation != toastpresentation.LIST) {
+    if (presentation != toastPresentation.LIST) {
       showToast(child, position, context, duration, fadeDuration,
           positionBuilder, animation, presentation);
     } else {
@@ -233,7 +233,7 @@ class ToastView {
       fadeDuration,
       PositionBuilder? positionBuilder,
       toastAnimation? animation,
-      toastpresentation presentation) {
+      toastPresentation presentation) {
     /// 오버레이 생성
     /// --> return OverlayEntry
     /// 사용자가 toast 커스텀을 어떻게 했는지에 따라 반환 위젯이 달라지고 그 위젯들은 오버레이 객체에 담겨 Queue를 통해 순차적으로 실행됨
@@ -267,7 +267,7 @@ class ToastView {
     //   required this.duration, : toast를 얼만큼 화면에 띄울 지 시간설정
     //   required this.fadeDuration : toast가 사라지는 효과 시간 설정
     // });
-    if (presentation == toastpresentation.TIMER) {
+    if (presentation == toastPresentation.TIMER) {
       toastManager.overlayQueue.add(_ToastEntry(
           // toast 하나가 만들어질때마다 큐에 담음
           entry: newEntry,
@@ -275,7 +275,7 @@ class ToastView {
           fadeDuration: fadeDuration));
       //Overlay.of(context)?.insert(newEntry); // overlay 실행
       //return newEntry;
-    } else if (presentation == toastpresentation.LAYER) {
+    } else if (presentation == toastPresentation.LAYER) {
       Overlay.of(context)?.insert(newEntry); // overlay 실행
 
       final totalDuration = duration + fadeDuration;
@@ -321,7 +321,7 @@ class ToastView {
 
   ///=============================================================================
   void listToast(
-      Widget child, BuildContext context, toastpresentation presentation) {
+      Widget child, BuildContext context, toastPresentation presentation) {
 
     /// 처음에 바닥에 깔릴 overlayEntry 만들기
     if (bottomNewEntry == null) {
@@ -387,7 +387,7 @@ class ToastView {
   }
 }
 
-///Toast List 실행 순서 관리 [toastpresentation.LIST]
+///Toast List 실행 순서 관리 [toastPresentation.LIST]
 /// [overlayList] 화면에 보여줄 토스트 객체 리스트
 /// [_overlayEntries] 각 토스트의 overlayEntry.
 class ToastListManager {
@@ -471,7 +471,7 @@ class _ToastListEntry {
 
 ///=============================================================================
 
-/// toast 실행 순서 관리 [toastpresentation.LAYER], [toastpresentation.TIMER]
+/// toast 실행 순서 관리 [toastPresentation.LAYER], [toastPresentation.TIMER]
 /// Queue<_ToastEntry> [overlayQueue]  toast 객체 관리할 Queue
 //class _ToastEntry {
 //   final OverlayEntry entry;
