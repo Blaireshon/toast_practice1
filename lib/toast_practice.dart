@@ -293,6 +293,7 @@ class ToastListManager {
     // 리스트에 추가
     _overlayEntries.add(newEntry);
 
+
     toast.entry = newEntry;
     //toast.timer.cancel(); // Cancel the previous timer
 
